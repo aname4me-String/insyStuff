@@ -61,7 +61,7 @@ public class IndexerService {
             metadata.setTotalPages(rawPages.size());
 
             if (!rawPages.isEmpty()) {
-                java.util.Map<String, Object> firstMeta = rawPages.getFirst().getMetadata();
+                java.util.Map<String, Object> firstMeta = rawPages.get(0).getMetadata();
                 metadata.setPdfTitle(stringOrNull(firstMeta.get("pdf_title")));
                 metadata.setPdfAuthor(stringOrNull(firstMeta.get("pdf_author")));
                 metadata.setPdfSubject(stringOrNull(firstMeta.get("pdf_subject")));
