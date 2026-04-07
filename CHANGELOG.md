@@ -29,3 +29,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - PostgreSQL init script creating `vector_store`, `document_metadata`, and
   `vector_store_document_chunk` tables with indexes
 - `.env.example` with all configurable environment variables
+
+## [1.1.0] – 2026-04-08
+
+### Changed
+- Backend build system: Maven → Gradle 9.2.1 (matches project Dockerfile)
+- Frontend: vanilla HTML/JS → Angular 19 SPA (Chat + Documents views)
+- Docker: renamed Dockerfiles to `db.DOCKERFILE`, `backend.DOCKERFILE`, `frontend.DOCKERFILE`
+- Docker Compose: adopted project network style (`tmoate_DB` / `tmoate_APP`), healthcheck-based `depends_on`, Adminer on `adminer` profile
+- Environment variables aligned: `user` / `pass` / `signin` / `POSTGRES_URL` / `PORT`
+- Added `ollama` service to compose; `nginx.conf` moved into `frontend/` (copied by `frontend.DOCKERFILE`)
+- DB init script creates pgvector + full schema in `venlab` database
+- Spring Boot Actuator readiness probe (`/actuator/health/readiness`) for Docker healthcheck

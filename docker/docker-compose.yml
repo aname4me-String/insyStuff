@@ -1,35 +1,70 @@
-version: '3.8'
-
 services:
-
-  postgres:
-    image: pgvector/pgvector:pg16
+  db: # db from custom Dockerfile for correct locale installation
+    build:
+      context: .
+      dockerfile: db.DOCKERFILE
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${user}
+      POSTGRES_PASSWORD: ${pass}
+      POSTGRES_DB: venlab
+    expose:
+      - "5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      - ./data:/var/lib/postgresql/data
+      - ./backup:/backup
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "5432:5432"
+      test: ["CMD-SHELL", "pg_isready -U ${user}"]
+      interval: 1s
+      timeout: 1s
+      retries: 15
+      start_period: 5s
+    networks:
+      - tmoate_DB
 
-  adminer:
-    image: adminer:latest
-    ports:
-      - "8090:8080"
+  backend: # Spring Boot RAG backend; shares DB credentials and Ollama settings
+    build:
+      context: ../backend/
+      dockerfile: ../docker/backend.DOCKERFILE
+    environment:
+      POSTGRES_USER: ${user}
+      POSTGRES_PASSWORD: ${pass}
+      POSTGRES_URL: jdbc:postgresql://db:5432/venlab
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      CHAT_MODEL: ${CHAT_MODEL:-llama3.2}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
+      SIGNIN_SECRET: ${signin}
+      PORT: "8080"
+    expose:
+      - "8080"
     depends_on:
-      - postgres
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"]
+      interval: 1s
+      timeout: 1s
+      retries: 15
+      start_period: 5s
+    networks:
+      - tmoate_DB
+      - tmoate_APP
 
-  ollama:
-    image: ollama/ollama:latest
+  frontend:
+    build:
+      context: ../frontend/
+      dockerfile: ../docker/frontend.DOCKERFILE
     ports:
-      - "11434:11434"
+      - "${APP_PORT:-80}:80" # all traffic enters here; nginx proxies /api/ to backend
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tmoate_APP
+
+  ollama: # local LLM runtime for chat + embeddings
+    image: ollama/ollama:latest
+    expose:
+      - "11434"
     volumes:
       - ollama_data:/root/.ollama
     # Uncomment for NVIDIA GPU support:
@@ -40,35 +75,31 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
+    networks:
+      - tmoate_APP
 
-  backend:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.backend
+  adminer: # DB admin UI — only active with --profile adminer
+    image: adminer:5
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      OLLAMA_BASE_URL: http://ollama:11434
-      CHAT_MODEL: ${CHAT_MODEL:-llama3.2}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
+      ADMINER_DEFAULT_SERVER: db
+    container_name: adminer
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
-      ollama:
-        condition: service_started
-    ports:
-      - "8080:8080"
-
-  frontend:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.frontend
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
+    networks:
+      - tmoate_DB
+    profiles:
+      - adminer
 
 volumes:
-  postgres_data:
+  data:
   ollama_data:
+
+networks:
+  # ausgesprochen Pa·ra·dei·ser IPA: [paʁaˈdaɪ̯zɐ]
+  tmoate_DB: # network for DB access
+    driver: bridge
+  tmoate_APP: # network for frontend–backend connection (reverse proxy)
+    driver: bridge

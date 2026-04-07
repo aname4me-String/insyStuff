@@ -1,0 +1,27 @@
+.docs-wrapper { padding: 1.5rem; height: 100%; overflow-y: auto; background: #1a1a2e; }
+
+.docs-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;
+  h2 { margin: 0; font-size: 1.2rem; color: #e0e0e0; }
+}
+
+.upload-btn {
+  background: #e94560; color: #fff; border-radius: 8px; padding: 0.5rem 1rem;
+  font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s;
+  &:hover:not(.disabled) { opacity: 0.85; }
+  &.disabled { opacity: 0.5; cursor: default; }
+}
+
+.upload-status {
+  margin-bottom: 1rem; padding: 0.6rem 1rem; border-radius: 8px;
+  background: #16213e; border: 1px solid #0f3460; font-size: 0.9rem; color: #a0aec0;
+}
+
+.loading, .empty { color: #718096; font-size: 0.95rem; padding: 2rem 0; text-align: center; }
+
+.docs-table {
+  width: 100%; border-collapse: collapse; font-size: 0.9rem;
+  th { background: #16213e; color: #90cdf4; padding: 0.6rem 0.8rem; text-align: left; font-weight: 600; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #0f3460; color: #e0e0e0; word-break: break-all; }
+  tr:hover td { background: #16213e33; }
+}
