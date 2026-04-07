@@ -1,0 +1,42 @@
+<div class="docs-wrapper">
+  <div class="docs-header">
+    <h2>Indexed Documents</h2>
+    <label class="upload-btn" [class.disabled]="uploading">
+      {{ uploading ? 'Indexing…' : '＋ Upload PDF' }}
+      <input type="file" accept=".pdf" (change)="onFileChange($event)" [disabled]="uploading" hidden />
+    </label>
+  </div>
+
+  @if (uploadStatus) {
+    <div class="upload-status">{{ uploadStatus }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading">Loading…</div>
+  } @else if (documents.length === 0) {
+    <div class="empty">No documents indexed yet. Upload a PDF to get started.</div>
+  } @else {
+    <table class="docs-table">
+      <thead>
+        <tr>
+          <th>File name</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Pages</th>
+          <th>Indexed</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (doc of documents; track doc.id) {
+          <tr>
+            <td>{{ doc.fileName }}</td>
+            <td>{{ doc.pdfTitle ?? '—' }}</td>
+            <td>{{ doc.pdfAuthor ?? '—' }}</td>
+            <td>{{ doc.totalPages ?? '—' }}</td>
+            <td>{{ doc.creationTs ? (doc.creationTs | date:'short') : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

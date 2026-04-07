@@ -1,0 +1,105 @@
+services:
+  db: # db from custom Dockerfile for correct locale installation
+    build:
+      context: .
+      dockerfile: db.DOCKERFILE
+    environment:
+      POSTGRES_USER: ${user}
+      POSTGRES_PASSWORD: ${pass}
+      POSTGRES_DB: venlab
+    expose:
+      - "5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./backup:/backup
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${user}"]
+      interval: 1s
+      timeout: 1s
+      retries: 15
+      start_period: 5s
+    networks:
+      - tmoate_DB
+
+  backend: # Spring Boot RAG backend; shares DB credentials and Ollama settings
+    build:
+      context: ../backend/
+      dockerfile: ../docker/backend.DOCKERFILE
+    environment:
+      POSTGRES_USER: ${user}
+      POSTGRES_PASSWORD: ${pass}
+      POSTGRES_URL: jdbc:postgresql://db:5432/venlab
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      CHAT_MODEL: ${CHAT_MODEL:-llama3.2}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
+      SIGNIN_SECRET: ${signin}
+      PORT: "8080"
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"]
+      interval: 1s
+      timeout: 1s
+      retries: 15
+      start_period: 5s
+    networks:
+      - tmoate_DB
+      - tmoate_APP
+
+  frontend:
+    build:
+      context: ../frontend/
+      dockerfile: ../docker/frontend.DOCKERFILE
+    ports:
+      - "${APP_PORT:-80}:80" # all traffic enters here; nginx proxies /api/ to backend
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tmoate_APP
+
+  ollama: # local LLM runtime for chat + embeddings
+    image: ollama/ollama:latest
+    expose:
+      - "11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Uncomment for NVIDIA GPU support:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    networks:
+      - tmoate_APP
+
+  adminer: # DB admin UI — only active with --profile adminer
+    image: adminer:5
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    container_name: adminer
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - tmoate_DB
+    profiles:
+      - adminer
+
+volumes:
+  data:
+  ollama_data:
+
+networks:
+  # ausgesprochen Pa·ra·dei·ser IPA: [paʁaˈdaɪ̯zɐ]
+  tmoate_DB: # network for DB access
+    driver: bridge
+  tmoate_APP: # network for frontend–backend connection (reverse proxy)
+    driver: bridge
