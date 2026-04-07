@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>insyRAG – Local Document Chat</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo">📄 insyRAG</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" id="btn-chat" onclick="showPane('chat')">💬 Chat</button>
+        <button class="nav-btn" id="btn-docs" onclick="showPane('docs')">📁 Documents</button>
+      </nav>
+
+      <div class="sidebar-upload">
+        <p class="upload-label">Index a new PDF</p>
+        <label class="upload-btn" for="pdf-upload">
+          ＋ Choose PDF
+          <input type="file" id="pdf-upload" accept=".pdf" onchange="uploadDocument(event)" hidden />
+        </label>
+        <div id="upload-status" class="upload-status"></div>
+      </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+      <!-- Chat pane -->
+      <section class="pane" id="pane-chat">
+        <div class="messages" id="messages">
+          <div class="message assistant">
+            <div class="bubble">
+              Hello! I'm your local RAG assistant. Upload a PDF and ask me anything about it.
+            </div>
+          </div>
+        </div>
+
+        <form class="input-bar" id="chat-form" onsubmit="sendMessage(event)">
+          <textarea
+            id="question-input"
+            class="question-input"
+            placeholder="Ask a question about your documents…"
+            rows="1"
+            onkeydown="handleKey(event)"
+          ></textarea>
+          <button type="submit" class="send-btn" id="send-btn">Send</button>
+        </form>
+      </section>
+
+      <!-- Documents pane -->
+      <section class="pane hidden" id="pane-docs">
+        <div class="docs-header">
+          <h2>Indexed Documents</h2>
+          <button class="refresh-btn" onclick="loadDocuments()">↺ Refresh</button>
+        </div>
+        <div id="docs-list" class="docs-list">
+          <p class="empty-hint">No documents indexed yet.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="src/app.js"></script>
+</body>
+</html>
