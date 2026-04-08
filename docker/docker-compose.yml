@@ -12,6 +12,7 @@ services:
     volumes:
       - ./data:/var/lib/postgresql/data
       - ./backup:/backup
+      - ./init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${user}"]
       interval: 1s
