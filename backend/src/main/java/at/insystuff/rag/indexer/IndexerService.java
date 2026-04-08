@@ -31,6 +31,12 @@ public class IndexerService {
     private final DocumentMetadataRepository documentMetadataRepository;
     private final VectorStoreDocumentChunkRepository chunkRepository;
 
+    // Keep chunks small enough for the embedding model's context window (num-ctx: 8192).
+    // TokenTextSplitter(chunkSize, minChunkSizeChars, minChunkLengthToEmbed, maxNumChunks, keepSeparator)
+    private static final int CHUNK_SIZE_TOKENS = 512;
+    // Number of chunks per vectorStore.add() call; keeps total tokens per request well under num-ctx.
+    private static final int EMBEDDING_BATCH_SIZE = 10;
+
     @Transactional
     public void indexPdf(MultipartFile multipartFile) {
         try {
@@ -50,7 +56,7 @@ public class IndexerService {
             PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(resource, config);
             List<Document> rawPages = pdfReader.get();
 
-            TokenTextSplitter splitter = new TokenTextSplitter(512, 100, 5, 10000, true);
+            TokenTextSplitter splitter = new TokenTextSplitter(CHUNK_SIZE_TOKENS, 100, 5, 10000, true);
             List<Document> chunks = splitter.apply(rawPages);
 
             // Persist document metadata
@@ -81,9 +87,8 @@ public class IndexerService {
                     .toList();
 
             // Embed in small batches to avoid exceeding the embedding model's context window
-            int batchSize = 10;
-            for (int i = 0; i < sanitizedChunks.size(); i += batchSize) {
-                List<Document> batch = sanitizedChunks.subList(i, Math.min(i + batchSize, sanitizedChunks.size()));
+            for (int i = 0; i < sanitizedChunks.size(); i += EMBEDDING_BATCH_SIZE) {
+                List<Document> batch = sanitizedChunks.subList(i, Math.min(i + EMBEDDING_BATCH_SIZE, sanitizedChunks.size()));
                 vectorStore.add(batch);
             }
 
