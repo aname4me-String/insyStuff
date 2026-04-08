@@ -9,4 +9,6 @@ import java.util.List;
 public interface RequestBenchmarkRepository extends JpaRepository<RequestBenchmark, Long> {
 
     List<RequestBenchmark> findTop200ByOrderByTimestampDesc();
+
+    List<RequestBenchmark> findTop1000ByOrderByTimestampDesc();
 }

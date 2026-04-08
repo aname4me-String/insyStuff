@@ -52,8 +52,9 @@ public class BenchmarkService {
     // -----------------------------------------------------------------------
 
     public StatsResponse computeStats() {
-        List<RequestBenchmark> all = repository.findAll();
-        int total = all.size();
+        // Use at most the last 1000 records to avoid loading unbounded data into memory
+        List<RequestBenchmark> all = repository.findTop1000ByOrderByTimestampDesc();
+        int total = (int) repository.count();
         if (total == 0) {
             return new StatsResponse(0,
                     vectorStoreRouter.getActiveType().name(),

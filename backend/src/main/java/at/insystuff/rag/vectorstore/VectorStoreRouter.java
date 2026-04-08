@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Routes all VectorStore operations to whichever backend is currently active.
@@ -27,7 +28,8 @@ public class VectorStoreRouter implements VectorStore {
     private final PgVectorStore pgVectorStore;
     private final SimpleVectorStore simpleVectorStore;
 
-    private volatile VectorStoreType activeType = VectorStoreType.PGVECTOR;
+    private final AtomicReference<VectorStoreType> activeType =
+            new AtomicReference<>(VectorStoreType.PGVECTOR);
 
     public VectorStoreRouter(
             @Qualifier("pgVectorStore") PgVectorStore pgVectorStore,
@@ -37,16 +39,16 @@ public class VectorStoreRouter implements VectorStore {
     }
 
     public VectorStoreType getActiveType() {
-        return activeType;
+        return activeType.get();
     }
 
     public void setActiveType(VectorStoreType type) {
-        this.activeType = type;
+        activeType.set(type);
         log.info("Switched active vector store to {}", type);
     }
 
     private VectorStore active() {
-        return activeType == VectorStoreType.PGVECTOR ? pgVectorStore : simpleVectorStore;
+        return activeType.get() == VectorStoreType.PGVECTOR ? pgVectorStore : simpleVectorStore;
     }
 
     @Override
