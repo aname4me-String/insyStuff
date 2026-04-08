@@ -31,21 +31,22 @@ public class IndexerController {
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".pdf")) {
             return ResponseEntity.badRequest().body("Only PDF files are supported");
         }
+        VectorStoreType vsType = vectorStoreRouter.getActiveType();
         if (vectorStoreType != null && !vectorStoreType.isBlank()) {
             try {
-                VectorStoreType vsType = VectorStoreType.valueOf(vectorStoreType.toUpperCase());
-                vectorStoreRouter.setActiveType(vsType);
+                vsType = VectorStoreType.valueOf(vectorStoreType.toUpperCase());
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body("Unknown vectorStoreType: " + vectorStoreType);
             }
         }
-        indexerService.indexPdf(file);
+        indexerService.indexPdf(file, vsType);
         return ResponseEntity.ok("Document indexed successfully");
     }
 
     @GetMapping("/documents")
-    public ResponseEntity<List<DocumentMetadata>> listDocuments() {
-        return ResponseEntity.ok(indexerService.listDocuments());
+    public ResponseEntity<List<DocumentMetadata>> listDocuments(
+            @RequestParam(value = "vectorStoreType", required = false) String vectorStoreType) {
+        return ResponseEntity.ok(indexerService.listDocuments(vectorStoreType));
     }
 
     @DeleteMapping("/documents/{id}")

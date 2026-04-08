@@ -43,18 +43,24 @@ export class DocumentsComponent implements OnInit {
     this.ragService.getActiveVectorStore().subscribe({
       next: (res) => {
         this.selectedVectorStore = res.activeVectorStore;
+        this.loadDocuments();
       },
-      error: () => {},
+      error: () => {
+        this.loadDocuments();
+      },
     });
-    this.loadDocuments();
   }
 
   loadDocuments(): void {
     this.loading = true;
-    this.ragService.listDocuments().subscribe({
+    this.ragService.listDocuments(this.selectedVectorStore).subscribe({
       next: (docs) => { this.documents = docs; this.loading = false; },
       error: () => { this.loading = false; },
     });
+  }
+
+  onVectorStoreChange(): void {
+    this.loadDocuments();
   }
 
   onFileChange(event: Event): void {
