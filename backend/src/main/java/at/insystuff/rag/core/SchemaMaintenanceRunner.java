@@ -30,7 +30,19 @@ public class SchemaMaintenanceRunner implements ApplicationRunner {
         addColumnIfMissing("document_metadata", "vector_store_type", "TEXT");
     }
 
+    /**
+     * Validates that the given name is a safe PostgreSQL identifier (letters, digits,
+     * underscores only) before using it in a DDL statement.
+     */
+    private static void validateIdentifier(String name) {
+        if (!name.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+            throw new IllegalArgumentException("Unsafe SQL identifier: " + name);
+        }
+    }
+
     private void dropConstraintIfExists(String table, String constraint) {
+        validateIdentifier(table);
+        validateIdentifier(constraint);
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.table_constraints " +
                 "WHERE table_schema = 'public' AND table_name = ? AND constraint_name = ?",
@@ -43,6 +55,9 @@ public class SchemaMaintenanceRunner implements ApplicationRunner {
     }
 
     private void addColumnIfMissing(String table, String column, String type) {
+        validateIdentifier(table);
+        validateIdentifier(column);
+        validateIdentifier(type);
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.columns " +
                 "WHERE table_schema = 'public' AND table_name = ? AND column_name = ?",

@@ -136,7 +136,8 @@ public class IndexerService {
             try {
                 vectorStoreRouter.setActiveType(VectorStoreType.valueOf(doc.getVectorStoreType()));
             } catch (IllegalArgumentException ignored) {
-                // Unknown type — fall back to whatever is currently active
+                log.warn("Unknown vectorStoreType '{}' for document id={}; deleting vectors from currently active store",
+                        doc.getVectorStoreType(), id);
             }
         }
         List<VectorStoreDocumentChunk> chunks = chunkRepository.findByDocumentId(id);
