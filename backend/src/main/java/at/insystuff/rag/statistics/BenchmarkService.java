@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 
 import java.lang.management.ManagementFactory;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.LongSummaryStatistics;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +68,7 @@ public class BenchmarkService {
             return new StatsResponse(total,
                     vectorStoreRouter.getActiveType().name(),
                     empty(), empty(), empty(), empty(), empty(), empty(),
-                    List.of());
+                    List.of(), Map.of(), Map.of());
         }
 
         MetricStats vectorSearch = computeLong(filtered, b -> b.getVectorSearchMs() != null ? b.getVectorSearchMs() : 0L);
@@ -82,10 +83,13 @@ public class BenchmarkService {
                 .map(this::toDto)
                 .toList();
 
+        Map<String, ModelBreakdownEntry> modelBreakdown = computeBreakdown(all, b -> b.getModel());
+        Map<String, ModelBreakdownEntry> vectorStoreBreakdown = computeBreakdown(all, b -> b.getVectorStoreType());
+
         return new StatsResponse(total,
                 vectorStoreRouter.getActiveType().name(),
                 vectorSearch, totalResponse, tokens, sources, ram, cpu,
-                recent);
+                recent, modelBreakdown, vectorStoreBreakdown);
     }
 
     public StatsResponse computeStats() {
@@ -170,6 +174,38 @@ public class BenchmarkService {
         );
     }
 
+    private Map<String, ModelBreakdownEntry> computeBreakdown(List<RequestBenchmark> all,
+                                                              Function<RequestBenchmark, String> keyFn) {
+        Map<String, List<RequestBenchmark>> grouped = all.stream()
+                .collect(Collectors.groupingBy(b -> {
+                    String key = keyFn.apply(b);
+                    return key != null && !key.isBlank() ? key : "Unknown";
+                }));
+        Map<String, ModelBreakdownEntry> result = new LinkedHashMap<>();
+        grouped.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> {
+                    List<RequestBenchmark> group = e.getValue();
+                    double avgResponse = group.stream()
+                            .mapToLong(b -> b.getTotalResponseMs() != null ? b.getTotalResponseMs() : 0L)
+                            .average().orElse(0);
+                    double avgVectorSearch = group.stream()
+                            .mapToLong(b -> b.getVectorSearchMs() != null ? b.getVectorSearchMs() : 0L)
+                            .average().orElse(0);
+                    double avgTokens = group.stream()
+                            .mapToInt(b -> b.getTokenCount() != null ? b.getTokenCount() : 0)
+                            .average().orElse(0);
+                    double avgSources = group.stream()
+                            .mapToInt(b -> b.getSourceCount() != null ? b.getSourceCount() : 0)
+                            .average().orElse(0);
+                    result.put(e.getKey(), new ModelBreakdownEntry(
+                            group.size(), round2(avgResponse), round2(avgVectorSearch),
+                            round2(avgTokens), round2(avgSources)));
+                });
+        return result;
+    }
+
+
     private long currentRamUsedMb() {
         Runtime rt = Runtime.getRuntime();
         long used = rt.totalMemory() - rt.freeMemory();
@@ -193,6 +229,14 @@ public class BenchmarkService {
     // -----------------------------------------------------------------------
     // DTOs (records)
     // -----------------------------------------------------------------------
+
+    public record ModelBreakdownEntry(
+            int requestCount,
+            double avgResponseMs,
+            double avgVectorSearchMs,
+            double avgTokenCount,
+            double avgSourceCount
+    ) {}
 
     public record MetricStats(double avg, double median, double min, double max) {}
 
@@ -219,6 +263,8 @@ public class BenchmarkService {
             MetricStats sourceCount,
             MetricStats ramUsedMb,
             MetricStats cpuLoadPercent,
-            List<RecentRequest> recentRequests
+            List<RecentRequest> recentRequests,
+            Map<String, ModelBreakdownEntry> modelBreakdown,
+            Map<String, ModelBreakdownEntry> vectorStoreBreakdown
     ) {}
 }

@@ -34,7 +34,6 @@ export class ChatComponent implements AfterViewChecked, OnInit {
   selectedVectorStore = '';
   loadingChats = false;
   loadingMessages = false;
-  chatsSidebarCollapsed = false;
 
   constructor(private ragService: RagService) {}
 
@@ -69,10 +68,6 @@ export class ChatComponent implements AfterViewChecked, OnInit {
 
   ngAfterViewChecked(): void {
     this.messagesEnd?.nativeElement.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  toggleChatsSidebar(): void {
-    this.chatsSidebarCollapsed = !this.chatsSidebarCollapsed;
   }
 
   loadConversations(): void {

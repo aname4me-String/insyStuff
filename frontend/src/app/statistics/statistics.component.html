@@ -159,6 +159,73 @@
       </table>
     </section>
 
+    <!-- Model Breakdown -->
+    @if (breakdownEntries(stats.modelBreakdown).length > 0) {
+      <section class="card">
+        <div class="card-title">🤖 Stats by Model</div>
+        <table class="metrics-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Requests</th>
+              <th>Avg Response</th>
+              <th>Avg Vec Search</th>
+              <th>Avg Tokens</th>
+              <th>Avg Sources</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of breakdownEntries(stats.modelBreakdown); track entry.key) {
+              <tr>
+                <td>{{ entry.key }}</td>
+                <td class="mono">{{ entry.val.requestCount }}</td>
+                <td class="mono">{{ formatMs(entry.val.avgResponseMs) }}</td>
+                <td class="mono">{{ formatMs(entry.val.avgVectorSearchMs) }}</td>
+                <td class="mono">{{ entry.val.avgTokenCount | number:'1.0-1' }}</td>
+                <td class="mono">{{ entry.val.avgSourceCount | number:'1.0-1' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+    <!-- Vector Store Breakdown -->
+    @if (breakdownEntries(stats.vectorStoreBreakdown).length > 0) {
+      <section class="card">
+        <div class="card-title">🗄️ Stats by Vector Store</div>
+        <table class="metrics-table">
+          <thead>
+            <tr>
+              <th>Store</th>
+              <th>Requests</th>
+              <th>Avg Response</th>
+              <th>Avg Vec Search</th>
+              <th>Avg Tokens</th>
+              <th>Avg Sources</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of breakdownEntries(stats.vectorStoreBreakdown); track entry.key) {
+              <tr>
+                <td>
+                  <span class="badge-sm" [class.badge-pg]="entry.key === 'PGVECTOR'"
+                                         [class.badge-simple]="entry.key === 'SIMPLE'">
+                    {{ entry.key }}
+                  </span>
+                </td>
+                <td class="mono">{{ entry.val.requestCount }}</td>
+                <td class="mono">{{ formatMs(entry.val.avgResponseMs) }}</td>
+                <td class="mono">{{ formatMs(entry.val.avgVectorSearchMs) }}</td>
+                <td class="mono">{{ entry.val.avgTokenCount | number:'1.0-1' }}</td>
+                <td class="mono">{{ entry.val.avgSourceCount | number:'1.0-1' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
     <!-- Recent Requests Table -->
     @if (stats.recentRequests.length > 0) {
       <section class="card">

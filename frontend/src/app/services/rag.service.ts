@@ -63,6 +63,14 @@ export interface RecentRequest {
   cpuLoadPercent: number;
 }
 
+export interface ModelBreakdownEntry {
+  requestCount: number;
+  avgResponseMs: number;
+  avgVectorSearchMs: number;
+  avgTokenCount: number;
+  avgSourceCount: number;
+}
+
 export interface StatsResponse {
   totalRequests: number;
   activeVectorStore: string;
@@ -73,6 +81,8 @@ export interface StatsResponse {
   ramUsedMb: MetricStats;
   cpuLoadPercent: MetricStats;
   recentRequests: RecentRequest[];
+  modelBreakdown: Record<string, ModelBreakdownEntry>;
+  vectorStoreBreakdown: Record<string, ModelBreakdownEntry>;
 }
 
 @Injectable({ providedIn: 'root' })
