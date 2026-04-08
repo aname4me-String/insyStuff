@@ -8,7 +8,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -17,7 +17,7 @@ spring:
       pgvector:
         table-name: vector_store
         dimensions: 768
-        initialize-schema: false
+        initialize-schema: true
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
