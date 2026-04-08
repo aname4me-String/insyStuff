@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RagService, StatsResponse, MetricStats, RecentRequest } from '../services/rag.service';
+import { RagService, StatsResponse, MetricStats, RecentRequest, ModelBreakdownEntry } from '../services/rag.service';
 
 @Component({
   selector: 'app-statistics',
@@ -60,6 +60,11 @@ export class StatisticsComponent implements OnInit {
 
   formatCpu(v: number): string {
     return v < 0 ? 'N/A' : v.toFixed(1) + ' %';
+  }
+
+  breakdownEntries(map: Record<string, ModelBreakdownEntry> | undefined): { key: string; val: ModelBreakdownEntry }[] {
+    if (!map) return [];
+    return Object.entries(map).map(([key, val]) => ({ key, val }));
   }
 
   cpuRowClass(v: number): string {

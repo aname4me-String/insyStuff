@@ -1,6 +1,6 @@
 <div class="chat-wrapper">
   <!-- Chats sidebar -->
-  <div class="chats-sidebar" [class.collapsed]="chatsSidebarCollapsed">
+  <div class="chats-sidebar">
     <div class="chats-sidebar-content">
       <button class="new-chat-btn" (click)="newConversation()">＋ New Chat</button>
       <div class="chats-list-scroll">
@@ -24,11 +24,6 @@
         }
       </div>
     </div>
-    <button
-      class="chats-collapse-strip"
-      (click)="toggleChatsSidebar()"
-      [title]="chatsSidebarCollapsed ? 'Show chats' : 'Hide chats'"
-    >{{ chatsSidebarCollapsed ? '›' : '‹' }}</button>
   </div>
 
   <!-- Main chat panel -->
