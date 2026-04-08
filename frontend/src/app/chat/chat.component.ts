@@ -30,6 +30,8 @@ export class ChatComponent implements AfterViewChecked, OnInit {
   sending = false;
   availableModels: string[] = [];
   selectedModel = '';
+  vectorStoreTypes: string[] = [];
+  selectedVectorStore = '';
   loadingChats = false;
   loadingMessages = false;
   chatsSidebarCollapsed = false;
@@ -47,6 +49,20 @@ export class ChatComponent implements AfterViewChecked, OnInit {
       error: () => {
         this.availableModels = [];
       },
+    });
+    this.ragService.getVectorStoreTypes().subscribe({
+      next: (types) => {
+        this.vectorStoreTypes = types;
+      },
+      error: () => {
+        this.vectorStoreTypes = ['PGVECTOR', 'SIMPLE'];
+      },
+    });
+    this.ragService.getActiveVectorStore().subscribe({
+      next: (res) => {
+        this.selectedVectorStore = res.activeVectorStore;
+      },
+      error: () => {},
     });
     this.loadConversations();
   }
@@ -145,7 +161,7 @@ export class ChatComponent implements AfterViewChecked, OnInit {
     const assistantMsg: DisplayMessage = { role: 'assistant', text: '', loading: true };
     this.messages.push(assistantMsg);
 
-    this.ragService.streamConversationMessage(this.currentConversationId!, q, this.selectedModel).subscribe({
+    this.ragService.streamConversationMessage(this.currentConversationId!, q, this.selectedModel, this.selectedVectorStore).subscribe({
       next: (event: WsStreamEvent) => {
         if (event.type === 'token') {
           assistantMsg.text += event.content;

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -14,6 +16,14 @@ import java.util.Map;
 public class SettingsController {
 
     private final VectorStoreRouter vectorStoreRouter;
+
+    @GetMapping("/vectorstore/types")
+    public ResponseEntity<List<String>> getVectorStoreTypes() {
+        List<String> types = Arrays.stream(VectorStoreType.values())
+                .map(VectorStoreType::name)
+                .toList();
+        return ResponseEntity.ok(types);
+    }
 
     @GetMapping("/vectorstore")
     public ResponseEntity<Map<String, String>> getActiveVectorStore() {

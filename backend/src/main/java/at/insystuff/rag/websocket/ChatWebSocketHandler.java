@@ -3,6 +3,8 @@ package at.insystuff.rag.websocket;
 import at.insystuff.rag.conversation.ConversationService;
 import at.insystuff.rag.query.QueryService;
 import at.insystuff.rag.statistics.BenchmarkService;
+import at.insystuff.rag.vectorstore.VectorStoreRouter;
+import at.insystuff.rag.vectorstore.VectorStoreType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final QueryService queryService;
     private final ObjectMapper objectMapper;
     private final BenchmarkService benchmarkService;
+    private final VectorStoreRouter vectorStoreRouter;
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
@@ -38,6 +41,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         Object chatIdRaw = payload.get("chatId");
         Object questionRaw = payload.get("question");
         Object modelRaw = payload.get("model");
+        Object vectorStoreTypeRaw = payload.get("vectorStoreType");
 
         if (chatIdRaw == null || questionRaw == null) {
             sendError(session, "chatId and question are required");
@@ -54,6 +58,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         String question = questionRaw.toString().trim();
         String model = modelRaw != null ? modelRaw.toString() : null;
+
+        if (vectorStoreTypeRaw != null && !vectorStoreTypeRaw.toString().isBlank()) {
+            try {
+                VectorStoreType vsType = VectorStoreType.valueOf(vectorStoreTypeRaw.toString().toUpperCase());
+                vectorStoreRouter.setActiveType(vsType);
+            } catch (IllegalArgumentException e) {
+                sendError(session, "Unknown vectorStoreType: " + vectorStoreTypeRaw);
+                return;
+            }
+        }
 
         if (question.isBlank()) {
             sendError(session, "question must not be blank");

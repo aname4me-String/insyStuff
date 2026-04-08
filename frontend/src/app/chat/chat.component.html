@@ -49,6 +49,21 @@
           <option value="">Loading…</option>
         }
       </select>
+      <label class="model-label" for="vectorstore-select">🗄️ Vector DB</label>
+      <select
+        id="vectorstore-select"
+        class="model-select"
+        [(ngModel)]="selectedVectorStore"
+        name="selectedVectorStore"
+        [disabled]="vectorStoreTypes.length === 0"
+      >
+        @for (t of vectorStoreTypes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+        @if (vectorStoreTypes.length === 0) {
+          <option value="">Loading…</option>
+        }
+      </select>
     </div>
 
     <div class="messages">

@@ -1,6 +1,8 @@
 package at.insystuff.rag.indexer;
 
 import at.insystuff.rag.core.entity.DocumentMetadata;
+import at.insystuff.rag.vectorstore.VectorStoreRouter;
+import at.insystuff.rag.vectorstore.VectorStoreType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,15 +18,26 @@ import java.util.Map;
 public class IndexerController {
 
     private final IndexerService indexerService;
+    private final VectorStoreRouter vectorStoreRouter;
 
     @PostMapping("/index")
-    public ResponseEntity<String> indexDocument(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> indexDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "vectorStoreType", required = false) String vectorStoreType) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("No file provided");
         }
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".pdf")) {
             return ResponseEntity.badRequest().body("Only PDF files are supported");
+        }
+        if (vectorStoreType != null && !vectorStoreType.isBlank()) {
+            try {
+                VectorStoreType vsType = VectorStoreType.valueOf(vectorStoreType.toUpperCase());
+                vectorStoreRouter.setActiveType(vsType);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Unknown vectorStoreType: " + vectorStoreType);
+            }
         }
         indexerService.indexPdf(file);
         return ResponseEntity.ok("Document indexed successfully");
