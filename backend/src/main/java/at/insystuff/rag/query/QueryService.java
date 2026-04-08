@@ -62,13 +62,15 @@ public class QueryService {
 
     private StreamContext buildStreamContext(String question, String model) {
         // 1. Retrieve top-k relevant chunks
+        long searchStart = System.currentTimeMillis();
         List<Document> relevant = vectorStore.similaritySearch(
                 SearchRequest.builder().query(question).topK(5).build()
         );
+        long vectorSearchMs = System.currentTimeMillis() - searchStart;
 
         if (relevant.isEmpty()) {
             Flux<String> single = Flux.just(NO_DOCS_MESSAGE);
-            return new StreamContext(List.of(), single);
+            return new StreamContext(List.of(), single, vectorSearchMs);
         }
 
         // 2. Build context string
@@ -107,12 +109,12 @@ public class QueryService {
 
         log.info("Prepared stream for question with {} source chunks, model='{}'",
                 chunks.size(), model != null && !model.isBlank() ? model : "default");
-        return new StreamContext(sources, tokenStream);
+        return new StreamContext(sources, tokenStream, vectorSearchMs);
     }
 
     public record SourceReference(String fileName, Integer pageNumber) {}
 
     public record ChatResponse(String answer, List<SourceReference> sources) {}
 
-    public record StreamContext(List<SourceReference> sources, Flux<String> tokenStream) {}
+    public record StreamContext(List<SourceReference> sources, Flux<String> tokenStream, long vectorSearchMs) {}
 }

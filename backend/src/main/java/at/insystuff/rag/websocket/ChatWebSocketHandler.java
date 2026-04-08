@@ -2,6 +2,7 @@ package at.insystuff.rag.websocket;
 
 import at.insystuff.rag.conversation.ConversationService;
 import at.insystuff.rag.query.QueryService;
+import at.insystuff.rag.statistics.BenchmarkService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ConversationService conversationService;
     private final QueryService queryService;
     private final ObjectMapper objectMapper;
+    private final BenchmarkService benchmarkService;
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
@@ -62,6 +64,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         conversationService.saveUserMessage(chatId, question);
 
         // Retrieve context + token stream
+        long requestStart = System.currentTimeMillis();
         QueryService.StreamContext ctx = queryService.streamAnswer(question, model);
 
         // Stream tokens to the client.
@@ -69,9 +72,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         // runs on a Tomcat servlet thread where blocking is the correct pattern.
         // Each token is forwarded immediately, giving the client live streaming output.
         StringBuilder fullAnswer = new StringBuilder();
+        int tokenCount = 0;
         try {
             for (String token : ctx.tokenStream().toIterable()) {
                 fullAnswer.append(token);
+                tokenCount++;
                 sendJson(session, Map.of("type", "token", "content", token));
             }
         } catch (Exception e) {
@@ -79,11 +84,17 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             sendError(session, "Streaming failed: " + e.getMessage());
             return;
         }
+        long totalResponseMs = System.currentTimeMillis() - requestStart;
 
         // Persist the assistant message
         String modelLabel = (model != null && !model.isBlank()) ? model : "default";
         ConversationService.ChatMessageDto saved = conversationService.saveAssistantMessage(
                 chatId, fullAnswer.toString(), modelLabel, ctx.sources());
+
+        // Record benchmark
+        benchmarkService.record(question, modelLabel,
+                ctx.vectorSearchMs(), totalResponseMs,
+                tokenCount, ctx.sources().size());
 
         // Send the completion event with sources and persisted message id
         sendJson(session, Map.of(

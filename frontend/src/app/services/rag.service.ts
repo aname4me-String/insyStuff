@@ -42,6 +42,39 @@ export type WsStreamEvent =
   | { type: 'done'; messageId: number; sources: SourceReference[] }
   | { type: 'error'; message: string };
 
+export interface MetricStats {
+  avg: number;
+  median: number;
+  min: number;
+  max: number;
+}
+
+export interface RecentRequest {
+  id: number;
+  timestamp: string;
+  question: string;
+  model: string;
+  vectorStoreType: string;
+  vectorSearchMs: number;
+  totalResponseMs: number;
+  tokenCount: number;
+  sourceCount: number;
+  ramUsedMb: number;
+  cpuLoadPercent: number;
+}
+
+export interface StatsResponse {
+  totalRequests: number;
+  activeVectorStore: string;
+  vectorSearchMs: MetricStats;
+  totalResponseMs: MetricStats;
+  tokenCount: MetricStats;
+  sourceCount: MetricStats;
+  ramUsedMb: MetricStats;
+  cpuLoadPercent: MetricStats;
+  recentRequests: RecentRequest[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class RagService {
   private readonly base = '/api';
@@ -119,5 +152,17 @@ export class RagService {
 
       return () => { if (ws.readyState < 2) ws.close(); };
     });
+  }
+
+  getStats(): Observable<StatsResponse> {
+    return this.http.get<StatsResponse>(`${this.base}/stats`);
+  }
+
+  getActiveVectorStore(): Observable<{ activeVectorStore: string }> {
+    return this.http.get<{ activeVectorStore: string }>(`${this.base}/settings/vectorstore`);
+  }
+
+  setActiveVectorStore(type: string): Observable<{ activeVectorStore: string }> {
+    return this.http.put<{ activeVectorStore: string }>(`${this.base}/settings/vectorstore`, { activeVectorStore: type });
   }
 }

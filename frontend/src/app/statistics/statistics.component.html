@@ -1,0 +1,171 @@
+<div class="stats-page">
+  <header class="stats-header">
+    <h1>📊 Statistics &amp; Benchmarks</h1>
+    <button class="btn-refresh" (click)="loadStats()" [disabled]="loading">
+      {{ loading ? '⏳ Loading…' : '🔄 Refresh' }}
+    </button>
+  </header>
+
+  @if (error) {
+    <div class="error-banner">{{ error }}</div>
+  }
+
+  @if (!loading && stats) {
+    <!-- Vector Store Switcher -->
+    <section class="card vectorstore-card">
+      <div class="card-title">🗄️ Active Vector Store</div>
+      <div class="vectorstore-row">
+        <span class="badge" [class.badge-pg]="stats.activeVectorStore === 'PGVECTOR'"
+                            [class.badge-simple]="stats.activeVectorStore === 'SIMPLE'">
+          {{ activeLabel() }}
+        </span>
+        <button class="btn-switch" (click)="switchVectorStore(otherStore())" [disabled]="switching">
+          {{ switching ? 'Switching…' : 'Switch to ' + otherStoreLabel() }}
+        </button>
+      </div>
+      @if (stats.activeVectorStore === 'SIMPLE') {
+        <p class="warn">⚠️ In-Memory store is empty until you re-index documents. Data is lost on restart.</p>
+      }
+    </section>
+
+    <!-- Summary Cards -->
+    <section class="cards-row">
+      <div class="summary-card">
+        <div class="summary-label">Total Requests</div>
+        <div class="summary-value">{{ stats.totalRequests }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Avg Response Time</div>
+        <div class="summary-value">{{ formatMs(stats.totalResponseMs.avg) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Avg Vector Search</div>
+        <div class="summary-value">{{ formatMs(stats.vectorSearchMs.avg) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Avg RAM Used</div>
+        <div class="summary-value">{{ formatMb(stats.ramUsedMb.avg) }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Avg CPU Load</div>
+        <div class="summary-value">{{ formatCpu(stats.cpuLoadPercent.avg) }}</div>
+      </div>
+    </section>
+
+    <!-- Metrics Table -->
+    <section class="card">
+      <div class="card-title">📈 Aggregate Metrics</div>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Average</th>
+            <th>Median</th>
+            <th>Min</th>
+            <th>Max</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Vector Search Time</td>
+            <td>{{ formatMs(stats.vectorSearchMs.avg) }}</td>
+            <td>{{ formatMs(stats.vectorSearchMs.median) }}</td>
+            <td>{{ formatMs(stats.vectorSearchMs.min) }}</td>
+            <td>{{ formatMs(stats.vectorSearchMs.max) }}</td>
+          </tr>
+          <tr>
+            <td>Total Response Time</td>
+            <td>{{ formatMs(stats.totalResponseMs.avg) }}</td>
+            <td>{{ formatMs(stats.totalResponseMs.median) }}</td>
+            <td>{{ formatMs(stats.totalResponseMs.min) }}</td>
+            <td>{{ formatMs(stats.totalResponseMs.max) }}</td>
+          </tr>
+          <tr>
+            <td>Token Count</td>
+            <td>{{ stats.tokenCount.avg }}</td>
+            <td>{{ stats.tokenCount.median }}</td>
+            <td>{{ stats.tokenCount.min }}</td>
+            <td>{{ stats.tokenCount.max }}</td>
+          </tr>
+          <tr>
+            <td>Source Chunks</td>
+            <td>{{ stats.sourceCount.avg }}</td>
+            <td>{{ stats.sourceCount.median }}</td>
+            <td>{{ stats.sourceCount.min }}</td>
+            <td>{{ stats.sourceCount.max }}</td>
+          </tr>
+          <tr>
+            <td>RAM Used (JVM)</td>
+            <td>{{ formatMb(stats.ramUsedMb.avg) }}</td>
+            <td>{{ formatMb(stats.ramUsedMb.median) }}</td>
+            <td>{{ formatMb(stats.ramUsedMb.min) }}</td>
+            <td>{{ formatMb(stats.ramUsedMb.max) }}</td>
+          </tr>
+          <tr [class]="cpuRowClass(stats.cpuLoadPercent.avg)">
+            <td>CPU Load</td>
+            <td>{{ formatCpu(stats.cpuLoadPercent.avg) }}</td>
+            <td>{{ formatCpu(stats.cpuLoadPercent.median) }}</td>
+            <td>{{ formatCpu(stats.cpuLoadPercent.min) }}</td>
+            <td>{{ formatCpu(stats.cpuLoadPercent.max) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Recent Requests Table -->
+    @if (stats.recentRequests.length > 0) {
+      <section class="card">
+        <div class="card-title">🕑 Recent Requests (last {{ stats.recentRequests.length }})</div>
+        <div class="table-scroll">
+          <table class="requests-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Time</th>
+                <th>Question</th>
+                <th>Model</th>
+                <th>Store</th>
+                <th>Vec Search</th>
+                <th>Response</th>
+                <th>Tokens</th>
+                <th>Sources</th>
+                <th>RAM</th>
+                <th>CPU</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (req of stats.recentRequests; track req.id) {
+                <tr>
+                  <td class="mono">{{ req.id }}</td>
+                  <td class="mono small">{{ req.timestamp | date:'HH:mm:ss' }}</td>
+                  <td class="question-cell" [title]="req.question">{{ req.question }}</td>
+                  <td>{{ req.model }}</td>
+                  <td>
+                    <span class="badge-sm" [class.badge-pg]="req.vectorStoreType === 'PGVECTOR'"
+                                           [class.badge-simple]="req.vectorStoreType === 'SIMPLE'">
+                      {{ req.vectorStoreType }}
+                    </span>
+                  </td>
+                  <td class="mono">{{ formatMs(req.vectorSearchMs) }}</td>
+                  <td class="mono">{{ formatMs(req.totalResponseMs) }}</td>
+                  <td class="mono">{{ req.tokenCount }}</td>
+                  <td class="mono">{{ req.sourceCount }}</td>
+                  <td class="mono">{{ formatMb(req.ramUsedMb) }}</td>
+                  <td class="mono">{{ formatCpu(req.cpuLoadPercent) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else {
+      <section class="card empty-card">
+        <p>No requests recorded yet. Start chatting to see benchmarks here.</p>
+      </section>
+    }
+  }
+
+  @if (loading && !stats) {
+    <div class="loading-msg">Loading statistics…</div>
+  }
+</div>
