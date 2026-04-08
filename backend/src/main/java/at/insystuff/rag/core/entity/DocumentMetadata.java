@@ -28,4 +28,6 @@ public class DocumentMetadata {
     private OffsetDateTime modificationTs;
 
     private Integer totalPages;
+
+    private String vectorStoreType;
 }

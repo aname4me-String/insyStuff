@@ -4,13 +4,14 @@ import at.insystuff.rag.core.entity.DocumentMetadata;
 import at.insystuff.rag.core.entity.VectorStoreDocumentChunk;
 import at.insystuff.rag.core.repository.DocumentMetadataRepository;
 import at.insystuff.rag.core.repository.VectorStoreDocumentChunkRepository;
+import at.insystuff.rag.vectorstore.VectorStoreRouter;
+import at.insystuff.rag.vectorstore.VectorStoreType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ import java.util.Optional;
 @Slf4j
 public class IndexerService {
 
-    private final VectorStore vectorStore;
+    private final VectorStoreRouter vectorStoreRouter;
     private final DocumentMetadataRepository documentMetadataRepository;
     private final VectorStoreDocumentChunkRepository chunkRepository;
 
@@ -41,7 +42,7 @@ public class IndexerService {
     private static final int EMBEDDING_BATCH_SIZE = 1;
 
     @Transactional
-    public void indexPdf(MultipartFile multipartFile) {
+    public void indexPdf(MultipartFile multipartFile, VectorStoreType vectorStoreType) {
         try {
             byte[] bytes = multipartFile.getBytes();
             String fileName = multipartFile.getOriginalFilename();
@@ -69,6 +70,7 @@ public class IndexerService {
             metadata.setCreationTs(OffsetDateTime.now());
             metadata.setModificationTs(OffsetDateTime.now());
             metadata.setTotalPages(rawPages.size());
+            metadata.setVectorStoreType(vectorStoreType.name());
 
             if (!rawPages.isEmpty()) {
                 java.util.Map<String, Object> firstMeta = rawPages.get(0).getMetadata();
@@ -79,7 +81,7 @@ public class IndexerService {
             }
 
             DocumentMetadata saved = documentMetadataRepository.save(metadata);
-            log.info("Saved document metadata id={} fileName={}", saved.getId(), fileName);
+            log.info("Saved document metadata id={} fileName={} vectorStoreType={}", saved.getId(), fileName, vectorStoreType);
 
             // Add chunks to vector store, sanitizing null bytes that PostgreSQL rejects
             List<Document> sanitizedChunks = chunks.stream()
@@ -89,10 +91,13 @@ public class IndexerService {
                     })
                     .toList();
 
+            // Ensure the router targets the requested store before adding vectors
+            vectorStoreRouter.setActiveType(vectorStoreType);
+
             // Embed in small batches to avoid exceeding the embedding model's context window
             for (int i = 0; i < sanitizedChunks.size(); i += EMBEDDING_BATCH_SIZE) {
                 List<Document> batch = sanitizedChunks.subList(i, Math.min(i + EMBEDDING_BATCH_SIZE, sanitizedChunks.size()));
-                vectorStore.add(batch);
+                vectorStoreRouter.add(batch);
             }
 
             // Persist chunk-to-document mapping
@@ -112,7 +117,7 @@ public class IndexerService {
                 chunkRepository.save(chunkEntity);
             }
 
-            log.info("Indexed {} chunks for document '{}'", totalChunks, fileName);
+            log.info("Indexed {} chunks for document '{}' in {}", totalChunks, fileName, vectorStoreType);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to read uploaded PDF", e);
@@ -125,14 +130,24 @@ public class IndexerService {
         if (opt.isEmpty()) {
             return false;
         }
+        DocumentMetadata doc = opt.get();
+        // Switch the router to the store where this document's vectors actually live
+        if (doc.getVectorStoreType() != null) {
+            try {
+                vectorStoreRouter.setActiveType(VectorStoreType.valueOf(doc.getVectorStoreType()));
+            } catch (IllegalArgumentException ignored) {
+                log.warn("Unknown vectorStoreType '{}' for document id={}; deleting vectors from currently active store",
+                        doc.getVectorStoreType(), id);
+            }
+        }
         List<VectorStoreDocumentChunk> chunks = chunkRepository.findByDocumentId(id);
         if (!chunks.isEmpty()) {
             List<String> vectorIds = chunks.stream().map(VectorStoreDocumentChunk::getVectorId).toList();
-            vectorStore.delete(vectorIds);
+            vectorStoreRouter.delete(vectorIds);
             chunkRepository.deleteByDocumentId(id);
         }
         documentMetadataRepository.deleteById(id);
-        log.info("Deleted document id={} fileName={}", id, opt.get().getFileName());
+        log.info("Deleted document id={} fileName={}", id, doc.getFileName());
         return true;
     }
 
@@ -147,7 +162,10 @@ public class IndexerService {
         });
     }
 
-    public List<DocumentMetadata> listDocuments() {
+    public List<DocumentMetadata> listDocuments(String vectorStoreType) {
+        if (vectorStoreType != null && !vectorStoreType.isBlank()) {
+            return documentMetadataRepository.findByVectorStoreType(vectorStoreType.toUpperCase());
+        }
         return documentMetadataRepository.findAll();
     }
 

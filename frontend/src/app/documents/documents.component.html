@@ -8,6 +8,7 @@
         class="vs-select"
         [(ngModel)]="selectedVectorStore"
         name="selectedVectorStore"
+        (change)="onVectorStoreChange()"
         [disabled]="vectorStoreTypes.length === 0"
       >
         @for (t of vectorStoreTypes; track t) {

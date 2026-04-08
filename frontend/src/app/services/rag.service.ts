@@ -20,6 +20,7 @@ export interface DocumentMetadata {
   pdfAuthor: string | null;
   totalPages: number | null;
   creationTs: string | null;
+  vectorStoreType: string | null;
 }
 
 export interface Conversation {
@@ -95,8 +96,9 @@ export class RagService {
     return this.http.post<ChatResponse>(`${this.base}/chat`, { question, model });
   }
 
-  listDocuments(): Observable<DocumentMetadata[]> {
-    return this.http.get<DocumentMetadata[]>(`${this.base}/documents`);
+  listDocuments(vectorStoreType?: string): Observable<DocumentMetadata[]> {
+    const params = vectorStoreType ? `?vectorStoreType=${encodeURIComponent(vectorStoreType)}` : '';
+    return this.http.get<DocumentMetadata[]>(`${this.base}/documents${params}`);
   }
 
   uploadDocument(file: File, vectorStoreType?: string): Observable<string> {
