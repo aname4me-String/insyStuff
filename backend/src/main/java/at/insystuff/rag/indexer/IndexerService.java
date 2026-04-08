@@ -50,7 +50,7 @@ public class IndexerService {
             PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(resource, config);
             List<Document> rawPages = pdfReader.get();
 
-            TokenTextSplitter splitter = new TokenTextSplitter();
+            TokenTextSplitter splitter = new TokenTextSplitter(512, 100, 5, 10000, true);
             List<Document> chunks = splitter.apply(rawPages);
 
             // Persist document metadata
@@ -79,7 +79,13 @@ public class IndexerService {
                         return new Document(chunk.getId(), clean, chunk.getMetadata());
                     })
                     .toList();
-            vectorStore.add(sanitizedChunks);
+
+            // Embed in small batches to avoid exceeding the embedding model's context window
+            int batchSize = 10;
+            for (int i = 0; i < sanitizedChunks.size(); i += batchSize) {
+                List<Document> batch = sanitizedChunks.subList(i, Math.min(i + batchSize, sanitizedChunks.size()));
+                vectorStore.add(batch);
+            }
 
             // Persist chunk-to-document mapping
             int totalChunks = sanitizedChunks.size();
