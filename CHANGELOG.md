@@ -41,3 +41,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `ollama` service to compose; `nginx.conf` moved into `frontend/` (copied by `frontend.DOCKERFILE`)
 - DB init script creates pgvector + full schema in `venlab` database
 - Spring Boot Actuator readiness probe (`/actuator/health/readiness`) for Docker healthcheck
+
+## [1.1.1] – 2026-04-08
+
+### Fixed
+- Ollama models (`nomic-embed-text`, `llama3.2`) were not pulled automatically before the backend
+  started, causing a `HTTP 404 – model not found` error on the first upload.
+  Added a healthcheck to the `ollama` service and a new `ollama-init` service that pulls the
+  configured models (`EMBEDDING_MODEL`, `CHAT_MODEL`) once Ollama is healthy.
+  The `backend` now depends on `ollama-init` completing successfully, so models are always
+  available before any embedding request is made.

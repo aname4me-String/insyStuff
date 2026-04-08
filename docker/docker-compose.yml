@@ -40,6 +40,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"]
       interval: 1s
@@ -76,6 +78,23 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - tmoate_APP
+
+  ollama-init: # pulls required models once ollama is ready; re-run is a no-op when already cached
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull ${EMBEDDING_MODEL:-nomic-embed-text} && ollama pull ${CHAT_MODEL:-llama3.2}"]
     networks:
       - tmoate_APP
 
