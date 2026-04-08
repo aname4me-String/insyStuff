@@ -2,13 +2,33 @@
   <div class="docs-header">
     <h2>Indexed Documents</h2>
     <label class="upload-btn" [class.disabled]="uploading">
-      {{ uploading ? 'Indexing…' : '＋ Upload PDF' }}
-      <input type="file" accept=".pdf" (change)="onFileChange($event)" [disabled]="uploading" hidden />
+      {{ uploading ? 'Indexing…' : '＋ Upload PDF(s)' }}
+      <input
+        #fileInput
+        type="file"
+        accept=".pdf"
+        multiple
+        (change)="onFileChange($event)"
+        [disabled]="uploading"
+        hidden
+      />
     </label>
   </div>
 
-  @if (uploadStatus) {
-    <div class="upload-status">{{ uploadStatus }}</div>
+  @if (uploadStatuses.length > 0) {
+    <div class="upload-status-list">
+      @for (s of uploadStatuses; track s.name) {
+        <div class="upload-status" [class.success]="s.status === 'success'" [class.error]="s.status === 'error'">
+          @if (s.status === 'pending' || s.status === 'uploading') { ⏳ }
+          @if (s.status === 'success') { ✅ }
+          @if (s.status === 'error') { ❌ }
+          "{{ s.name }}"
+          @if (s.status === 'uploading') { — indexing… }
+          @if (s.status === 'success') { — indexed successfully }
+          @if (s.status === 'error') { — failed to index }
+        </div>
+      }
+    </div>
   }
 
   @if (loading) {

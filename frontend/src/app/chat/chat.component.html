@@ -1,62 +1,94 @@
 <div class="chat-wrapper">
-  <div class="model-bar">
-    <label class="model-label" for="model-select">🤖 Model</label>
-    <select
-      id="model-select"
-      class="model-select"
-      [(ngModel)]="selectedModel"
-      name="selectedModel"
-      [disabled]="availableModels.length === 0"
-    >
-      @for (m of availableModels; track m) {
-        <option [value]="m">{{ m }}</option>
-      }
-      @if (availableModels.length === 0) {
-        <option value="">Loading…</option>
-      }
-    </select>
+  <!-- Chats sidebar -->
+  <div class="chats-sidebar">
+    <button class="new-chat-btn" (click)="newConversation()">＋ New Chat</button>
+    @if (loadingChats) {
+      <div class="chats-loading">Loading…</div>
+    } @else if (conversations.length === 0) {
+      <div class="chats-empty">No chats yet</div>
+    } @else {
+      <ul class="chats-list">
+        @for (conv of conversations; track conv.id) {
+          <li
+            class="chat-item"
+            [class.active]="conv.id === currentConversationId"
+            (click)="selectConversation(conv.id)"
+          >
+            <span class="chat-item-title">{{ conv.title }}</span>
+            <button class="chat-delete-btn" title="Delete chat" (click)="deleteConversation(conv, $event)">🗑</button>
+          </li>
+        }
+      </ul>
+    }
   </div>
 
-  <div class="messages">
-    @for (msg of messages; track $index) {
-      <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
-        <div class="bubble">
-          @if (msg.loading) {
-            <span class="typing"><span></span><span></span><span></span></span>
-          } @else {
-            {{ msg.text }}
-          }
-        </div>
-        @if (msg.model && msg.role === 'assistant' && !msg.loading) {
-          <span class="model-badge">{{ msg.model }}</span>
+  <!-- Main chat panel -->
+  <div class="chat-main">
+    <div class="model-bar">
+      <label class="model-label" for="model-select">🤖 Model</label>
+      <select
+        id="model-select"
+        class="model-select"
+        [(ngModel)]="selectedModel"
+        name="selectedModel"
+        [disabled]="availableModels.length === 0"
+      >
+        @for (m of availableModels; track m) {
+          <option [value]="m">{{ m }}</option>
         }
-        @if (msg.sources && msg.sources.length > 0) {
-          <div class="sources">
-            <span class="sources-label">Sources:</span>
-            @for (src of msg.sources; track $index) {
-              <span class="source-badge">
-                📄 {{ src.fileName }}
-                @if (src.pageNumber) { <em>p. {{ src.pageNumber }}</em> }
-              </span>
+        @if (availableModels.length === 0) {
+          <option value="">Loading…</option>
+        }
+      </select>
+    </div>
+
+    <div class="messages">
+      @if (loadingMessages) {
+        <div class="messages-loading">Loading messages…</div>
+      } @else if (currentConversationId === null) {
+        <div class="messages-empty">Select or create a chat to get started.</div>
+      } @else {
+        @for (msg of messages; track $index) {
+          <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+            <div class="bubble">
+              @if (msg.loading) {
+                <span class="typing"><span></span><span></span><span></span></span>
+              } @else {
+                {{ msg.text }}
+              }
+            </div>
+            @if (msg.model && msg.role === 'assistant' && !msg.loading) {
+              <span class="model-badge">{{ msg.model }}</span>
+            }
+            @if (msg.sources && msg.sources.length > 0) {
+              <div class="sources">
+                <span class="sources-label">Sources:</span>
+                @for (src of msg.sources; track $index) {
+                  <span class="source-badge">
+                    📄 {{ src.fileName }}
+                    @if (src.pageNumber) { <em>p. {{ src.pageNumber }}</em> }
+                  </span>
+                }
+              </div>
             }
           </div>
         }
-      </div>
-    }
-    <div #messagesEnd></div>
-  </div>
+      }
+      <div #messagesEnd></div>
+    </div>
 
-  <form class="input-bar" (ngSubmit)="send()">
-    <textarea
-      [(ngModel)]="question"
-      name="question"
-      class="question-input"
-      placeholder="Ask a question about your documents…"
-      rows="1"
-      (keydown)="onKeydown($event)"
-    ></textarea>
-    <button type="submit" class="send-btn" [disabled]="sending || !question.trim()">
-      {{ sending ? '…' : '➤' }}
-    </button>
-  </form>
+    <form class="input-bar" (ngSubmit)="send()">
+      <textarea
+        [(ngModel)]="question"
+        name="question"
+        class="question-input"
+        placeholder="Ask a question about your documents…"
+        rows="1"
+        (keydown)="onKeydown($event)"
+      ></textarea>
+      <button type="submit" class="send-btn" [disabled]="sending || !question.trim()">
+        {{ sending ? '…' : '➤' }}
+      </button>
+    </form>
+  </div>
 </div>
