@@ -34,8 +34,11 @@ public class IndexerService {
     // Keep chunks small enough for the embedding model's context window (num-ctx: 8192).
     // TokenTextSplitter(chunkSize, minChunkSizeChars, minChunkLengthToEmbed, maxNumChunks, keepSeparator)
     private static final int CHUNK_SIZE_TOKENS = 512;
-    // Number of chunks per vectorStore.add() call; keeps total tokens per request well under num-ctx.
-    private static final int EMBEDDING_BATCH_SIZE = 10;
+    // Embed one chunk per vectorStore.add() call to avoid exceeding the embedding model's num-ctx.
+    // Ollama's /api/embed counts total tokens across all inputs in a single request; sending one
+    // chunk at a time guarantees that each request stays within the 8192-token context window
+    // regardless of tokenizer differences between TokenTextSplitter (cl100k_base) and nomic-embed-text.
+    private static final int EMBEDDING_BATCH_SIZE = 1;
 
     @Transactional
     public void indexPdf(MultipartFile multipartFile) {
