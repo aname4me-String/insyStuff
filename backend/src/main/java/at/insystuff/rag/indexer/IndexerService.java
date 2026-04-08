@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -102,6 +103,34 @@ public class IndexerService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to read uploaded PDF", e);
         }
+    }
+
+    @Transactional
+    public boolean deleteDocument(Long id) {
+        Optional<DocumentMetadata> opt = documentMetadataRepository.findById(id);
+        if (opt.isEmpty()) {
+            return false;
+        }
+        List<VectorStoreDocumentChunk> chunks = chunkRepository.findByDocumentId(id);
+        if (!chunks.isEmpty()) {
+            List<String> vectorIds = chunks.stream().map(VectorStoreDocumentChunk::getVectorId).toList();
+            vectorStore.delete(vectorIds);
+            chunkRepository.deleteByDocumentId(id);
+        }
+        documentMetadataRepository.deleteById(id);
+        log.info("Deleted document id={} fileName={}", id, opt.get().getFileName());
+        return true;
+    }
+
+    @Transactional
+    public Optional<DocumentMetadata> renameDocument(Long id, String newName) {
+        return documentMetadataRepository.findById(id).map(doc -> {
+            doc.setFileName(newName);
+            doc.setModificationTs(OffsetDateTime.now());
+            DocumentMetadata saved = documentMetadataRepository.save(doc);
+            log.info("Renamed document id={} to '{}'", id, newName);
+            return saved;
+        });
     }
 
     public List<DocumentMetadata> listDocuments() {

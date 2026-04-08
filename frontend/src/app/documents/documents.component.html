@@ -44,16 +44,38 @@
           <th>Author</th>
           <th>Pages</th>
           <th>Indexed</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         @for (doc of documents; track doc.id) {
           <tr>
-            <td>{{ doc.fileName }}</td>
+            <td>
+              @if (renamingId === doc.id) {
+                <input
+                  class="rename-input"
+                  [(ngModel)]="renameValue"
+                  (keydown.enter)="confirmRename(doc)"
+                  (keydown.escape)="cancelRename()"
+                  autofocus
+                />
+              } @else {
+                {{ doc.fileName }}
+              }
+            </td>
             <td>{{ doc.pdfTitle ?? '—' }}</td>
             <td>{{ doc.pdfAuthor ?? '—' }}</td>
             <td>{{ doc.totalPages ?? '—' }}</td>
             <td>{{ doc.creationTs ? (doc.creationTs | date:'short') : '—' }}</td>
+            <td class="actions-cell">
+              @if (renamingId === doc.id) {
+                <button class="action-btn confirm-btn" (click)="confirmRename(doc)" title="Confirm rename">✔</button>
+                <button class="action-btn cancel-btn" (click)="cancelRename()" title="Cancel">✕</button>
+              } @else {
+                <button class="action-btn rename-btn" (click)="startRename(doc)" title="Rename">✎</button>
+                <button class="action-btn delete-btn" (click)="deleteDocument(doc)" title="Delete">🗑</button>
+              }
+            </td>
           </tr>
         }
       </tbody>

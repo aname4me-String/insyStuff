@@ -1,11 +1,24 @@
 <div class="app-shell">
-  <aside class="sidebar">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
     <div class="sidebar-header">
-      <span class="logo">📄 insyRAG</span>
+      @if (!sidebarCollapsed) {
+        <span class="logo">📄 insyRAG</span>
+      }
+      <button
+        class="sidebar-toggle"
+        (click)="toggleSidebar()"
+        [title]="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      >{{ sidebarCollapsed ? '›' : '‹' }}</button>
     </div>
     <nav class="sidebar-nav">
-      <a class="nav-btn" routerLink="/chat" routerLinkActive="active">💬 Chat</a>
-      <a class="nav-btn" routerLink="/documents" routerLinkActive="active">📁 Documents</a>
+      <a class="nav-btn" routerLink="/chat" routerLinkActive="active" title="Chat">
+        <span class="nav-icon">💬</span>
+        @if (!sidebarCollapsed) { <span class="nav-text">Chat</span> }
+      </a>
+      <a class="nav-btn" routerLink="/documents" routerLinkActive="active" title="Documents">
+        <span class="nav-icon">📁</span>
+        @if (!sidebarCollapsed) { <span class="nav-text">Documents</span> }
+      </a>
     </nav>
   </aside>
   <main class="main">

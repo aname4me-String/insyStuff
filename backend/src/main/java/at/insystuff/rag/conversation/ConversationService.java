@@ -69,7 +69,15 @@ public class ConversationService {
 
     @Transactional
     public ChatMessageDto sendMessage(Long chatId, String question, String model) {
-        // Save user message
+        saveUserMessage(chatId, question);
+        QueryService.ChatResponse response = queryService.answer(question, model);
+        return saveAssistantMessage(chatId, response.answer(),
+                model != null && !model.isBlank() ? model : DEFAULT_MODEL_LABEL,
+                response.sources());
+    }
+
+    @Transactional
+    public void saveUserMessage(Long chatId, String question) {
         ChatMessage userMessage = new ChatMessage();
         userMessage.setChatId(chatId);
         userMessage.setRole("user");
@@ -77,7 +85,6 @@ public class ConversationService {
         userMessage.setCreatedAt(OffsetDateTime.now());
         chatMessageRepository.save(userMessage);
 
-        // Update chat title if this is the first message
         chatRepository.findById(chatId).ifPresent(chat -> {
             if (DEFAULT_CHAT_TITLE.equals(chat.getTitle())) {
                 String newTitle = question.length() > 50 ? question.substring(0, 50) + "…" : question;
@@ -85,21 +92,20 @@ public class ConversationService {
                 chatRepository.save(chat);
             }
         });
+    }
 
-        // Get AI answer
-        QueryService.ChatResponse response = queryService.answer(question, model);
-
-        // Save assistant message
+    @Transactional
+    public ChatMessageDto saveAssistantMessage(Long chatId, String answer, String model,
+                                               List<QueryService.SourceReference> sources) {
         ChatMessage assistantMessage = new ChatMessage();
         assistantMessage.setChatId(chatId);
         assistantMessage.setRole("assistant");
-        assistantMessage.setContent(response.answer());
-        assistantMessage.setModel(model != null && !model.isBlank() ? model : DEFAULT_MODEL_LABEL);
+        assistantMessage.setContent(answer);
+        assistantMessage.setModel(model);
         assistantMessage.setCreatedAt(OffsetDateTime.now());
         ChatMessage savedAssistant = chatMessageRepository.save(assistantMessage);
 
-        // Save sources
-        List<ChatMessageSourceDto> sourceDtos = response.sources().stream()
+        List<ChatMessageSourceDto> sourceDtos = sources.stream()
                 .map(src -> {
                     ChatMessageSource source = new ChatMessageSource();
                     source.setMessageId(savedAssistant.getId());
@@ -110,7 +116,7 @@ public class ConversationService {
                 })
                 .toList();
 
-        log.info("Persisted chat message in chat {} with model '{}'", chatId, assistantMessage.getModel());
+        log.info("Persisted assistant message in chat {} with model '{}'", chatId, model);
         return new ChatMessageDto(
                 savedAssistant.getId(),
                 savedAssistant.getRole(),

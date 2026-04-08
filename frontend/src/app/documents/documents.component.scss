@@ -31,3 +31,42 @@
   td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #0f3460; color: #e0e0e0; word-break: break-all; }
   tr:hover td { background: #16213e33; }
 }
+
+.actions-cell {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.action-btn {
+  background: none; border: 1px solid transparent; border-radius: 6px;
+  cursor: pointer; font-size: 1rem; padding: 0.2rem 0.45rem; margin-left: 0.25rem;
+  transition: background 0.15s, border-color 0.15s;
+  &:first-child { margin-left: 0; }
+}
+
+.rename-btn {
+  color: #90cdf4;
+  &:hover { background: #0f346033; border-color: #90cdf4; }
+}
+
+.delete-btn {
+  color: #fc8181;
+  &:hover { background: #e9456022; border-color: #fc8181; }
+}
+
+.confirm-btn {
+  color: #68d391;
+  &:hover { background: #68d39122; border-color: #68d391; }
+}
+
+.cancel-btn {
+  color: #a0aec0;
+  &:hover { background: #71809622; border-color: #a0aec0; }
+}
+
+.rename-input {
+  background: #0f3460; border: 1px solid #90cdf4; border-radius: 6px;
+  color: #e0e0e0; font-size: 0.9rem; padding: 0.2rem 0.5rem;
+  width: 100%; box-sizing: border-box;
+  &:focus { outline: none; border-color: #63b3ed; }
+}
