@@ -5,6 +5,22 @@
   h2 { margin: 0; font-size: 1.2rem; color: #e0e0e0; }
 }
 
+.docs-controls {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+}
+
+.vs-label {
+  font-size: 0.85rem; color: #718096; white-space: nowrap;
+}
+
+.vs-select {
+  background: #1a1a2e; border: 1px solid #0f3460; border-radius: 6px;
+  color: #e0e0e0; font-size: 0.85rem; padding: 0.3rem 0.6rem;
+  cursor: pointer; outline: none;
+  &:focus { border-color: #e94560; }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
 .upload-btn {
   background: #e94560; color: #fff; border-radius: 8px; padding: 0.5rem 1rem;
   font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s;

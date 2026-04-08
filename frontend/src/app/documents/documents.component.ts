@@ -26,9 +26,26 @@ export class DocumentsComponent implements OnInit {
   renamingId: number | null = null;
   renameValue = '';
 
+  vectorStoreTypes: string[] = [];
+  selectedVectorStore = '';
+
   constructor(private ragService: RagService) {}
 
   ngOnInit(): void {
+    this.ragService.getVectorStoreTypes().subscribe({
+      next: (types) => {
+        this.vectorStoreTypes = types;
+      },
+      error: () => {
+        this.vectorStoreTypes = ['PGVECTOR', 'SIMPLE'];
+      },
+    });
+    this.ragService.getActiveVectorStore().subscribe({
+      next: (res) => {
+        this.selectedVectorStore = res.activeVectorStore;
+      },
+      error: () => {},
+    });
     this.loadDocuments();
   }
 
@@ -62,7 +79,7 @@ export class DocumentsComponent implements OnInit {
     const file = files[index];
     this.uploadStatuses[index] = { name: file.name, status: 'uploading' };
 
-    this.ragService.uploadDocument(file).subscribe({
+    this.ragService.uploadDocument(file, this.selectedVectorStore).subscribe({
       next: () => {
         this.uploadStatuses[index] = { name: file.name, status: 'success' };
         this.uploadNext(files, index + 1);

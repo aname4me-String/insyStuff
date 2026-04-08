@@ -99,10 +99,11 @@ export class RagService {
     return this.http.get<DocumentMetadata[]>(`${this.base}/documents`);
   }
 
-  uploadDocument(file: File): Observable<string> {
+  uploadDocument(file: File, vectorStoreType?: string): Observable<string> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post(`${this.base}/index`, form, { responseType: 'text' });
+    const params = vectorStoreType ? `?vectorStoreType=${encodeURIComponent(vectorStoreType)}` : '';
+    return this.http.post(`${this.base}/index${params}`, form, { responseType: 'text' });
   }
 
   deleteDocument(id: number): Observable<void> {
@@ -139,13 +140,13 @@ export class RagService {
     return this.http.post<ConversationMessage>(`${this.base}/chats/${chatId}/messages`, { question, model });
   }
 
-  streamConversationMessage(chatId: number, question: string, model?: string): Observable<WsStreamEvent> {
+  streamConversationMessage(chatId: number, question: string, model?: string, vectorStoreType?: string): Observable<WsStreamEvent> {
     return new Observable(observer => {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
       const ws = new WebSocket(`${proto}://${location.host}/ws/chat`);
 
       ws.onopen = () => {
-        ws.send(JSON.stringify({ chatId, question, model: model ?? '' }));
+        ws.send(JSON.stringify({ chatId, question, model: model ?? '', vectorStoreType: vectorStoreType ?? '' }));
       };
 
       ws.onmessage = (event: MessageEvent) => {
@@ -164,8 +165,22 @@ export class RagService {
     });
   }
 
-  getStats(): Observable<StatsResponse> {
-    return this.http.get<StatsResponse>(`${this.base}/stats`);
+  getStats(vectorStoreTypes?: string[], models?: string[], recentLimit?: number): Observable<StatsResponse> {
+    const params: Record<string, string> = {};
+    if (vectorStoreTypes && vectorStoreTypes.length > 0) {
+      params['vectorStoreTypes'] = vectorStoreTypes.join(',');
+    }
+    if (models && models.length > 0) {
+      params['models'] = models.join(',');
+    }
+    if (recentLimit !== undefined) {
+      params['recentLimit'] = String(recentLimit);
+    }
+    return this.http.get<StatsResponse>(`${this.base}/stats`, { params });
+  }
+
+  getVectorStoreTypes(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/settings/vectorstore/types`);
   }
 
   getActiveVectorStore(): Observable<{ activeVectorStore: string }> {
