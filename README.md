@@ -23,14 +23,11 @@ cp docker/.env.example docker/.env
 # Edit docker/.env and set: user, pass, signin
 
 # 3. Build & start all services
+#    Ollama models are pulled automatically on first start (can take a few minutes)
 cd docker
 docker compose up -d --build
 
-# 4. Pull Ollama models (first time only – can take a few minutes)
-docker compose exec ollama ollama pull llama3.2
-docker compose exec ollama ollama pull nomic-embed-text
-
-# 5. Open the app
+# 4. Open the app
 open http://localhost
 ```
 
