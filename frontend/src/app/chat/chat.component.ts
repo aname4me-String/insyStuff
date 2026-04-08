@@ -11,6 +11,8 @@ interface DisplayMessage {
   model?: string;
 }
 
+const DEFAULT_CHAT_TITLE = 'New Chat';
+
 @Component({
   selector: 'app-chat',
   standalone: true,
@@ -147,7 +149,7 @@ export class ChatComponent implements AfterViewChecked, OnInit {
         this.sending = false;
         // Update conversation title in sidebar
         const conv = this.conversations.find(c => c.id === this.currentConversationId);
-        if (conv && conv.title === 'New Chat') {
+        if (conv && conv.title === DEFAULT_CHAT_TITLE) {
           this.loadConversations();
         }
       },

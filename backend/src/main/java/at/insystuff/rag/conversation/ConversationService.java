@@ -21,6 +21,9 @@ import java.util.Optional;
 @Slf4j
 public class ConversationService {
 
+    private static final String DEFAULT_CHAT_TITLE = "New Chat";
+    private static final String DEFAULT_MODEL_LABEL = "default";
+
     private final ChatRepository chatRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatMessageSourceRepository chatMessageSourceRepository;
@@ -32,7 +35,7 @@ public class ConversationService {
 
     public Chat createChat(String title) {
         Chat chat = new Chat();
-        chat.setTitle(title != null && !title.isBlank() ? title : "New Chat");
+        chat.setTitle(title != null && !title.isBlank() ? title : DEFAULT_CHAT_TITLE);
         chat.setCreatedAt(OffsetDateTime.now());
         return chatRepository.save(chat);
     }
@@ -76,7 +79,7 @@ public class ConversationService {
 
         // Update chat title if this is the first message
         chatRepository.findById(chatId).ifPresent(chat -> {
-            if ("New Chat".equals(chat.getTitle())) {
+            if (DEFAULT_CHAT_TITLE.equals(chat.getTitle())) {
                 String newTitle = question.length() > 50 ? question.substring(0, 50) + "…" : question;
                 chat.setTitle(newTitle);
                 chatRepository.save(chat);
@@ -91,7 +94,7 @@ public class ConversationService {
         assistantMessage.setChatId(chatId);
         assistantMessage.setRole("assistant");
         assistantMessage.setContent(response.answer());
-        assistantMessage.setModel(model != null && !model.isBlank() ? model : "default");
+        assistantMessage.setModel(model != null && !model.isBlank() ? model : DEFAULT_MODEL_LABEL);
         assistantMessage.setCreatedAt(OffsetDateTime.now());
         ChatMessage savedAssistant = chatMessageRepository.save(assistantMessage);
 
