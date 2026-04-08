@@ -1,4 +1,22 @@
 <div class="chat-wrapper">
+  <div class="model-bar">
+    <label class="model-label" for="model-select">🤖 Model</label>
+    <select
+      id="model-select"
+      class="model-select"
+      [(ngModel)]="selectedModel"
+      name="selectedModel"
+      [disabled]="availableModels.length === 0"
+    >
+      @for (m of availableModels; track m) {
+        <option [value]="m">{{ m }}</option>
+      }
+      @if (availableModels.length === 0) {
+        <option value="">Loading…</option>
+      }
+    </select>
+  </div>
+
   <div class="messages">
     @for (msg of messages; track $index) {
       <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
@@ -9,6 +27,9 @@
             {{ msg.text }}
           }
         </div>
+        @if (msg.model && msg.role === 'assistant' && !msg.loading) {
+          <span class="model-badge">{{ msg.model }}</span>
+        }
         @if (msg.sources && msg.sources.length > 0) {
           <div class="sources">
             <span class="sources-label">Sources:</span>

@@ -33,6 +33,7 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       CHAT_MODEL: ${CHAT_MODEL:-llama3.2}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
+      AVAILABLE_MODELS: ${AVAILABLE_MODELS:-llama3.2,mistral,phi3}
       SIGNIN_SECRET: ${signin}
       PORT: "8080"
     expose:
@@ -94,7 +95,7 @@ services:
         condition: service_healthy
     environment:
       OLLAMA_HOST: http://ollama:11434
-    entrypoint: ["/bin/sh", "-c", "ollama pull ${EMBEDDING_MODEL:-nomic-embed-text} && ollama pull ${CHAT_MODEL:-llama3.2}"]
+    entrypoint: ["/bin/sh", "-c", "ollama pull ${EMBEDDING_MODEL:-nomic-embed-text} && ollama pull ${CHAT_MODEL:-llama3.2} && ollama pull mistral && ollama pull phi3"]
     networks:
       - tmoate_APP
 
