@@ -58,13 +58,13 @@ export class ChatComponent implements AfterViewChecked, OnInit {
     this.messages.push({ role: 'user', text: q });
     this.messages.push({ role: 'assistant', text: '', loading: true });
 
-    this.ragService.chat(q, this.selectedModel || undefined).subscribe({
+    this.ragService.chat(q, this.selectedModel).subscribe({
       next: (res: ChatResponse) => {
         const last = this.messages[this.messages.length - 1];
         last.text = res.answer;
         last.sources = res.sources;
         last.loading = false;
-        last.model = this.selectedModel || undefined;
+        last.model = this.selectedModel;
         this.sending = false;
       },
       error: () => {
