@@ -10,29 +10,76 @@
     <div class="error-banner">{{ error }}</div>
   }
 
-  @if (!loading && stats) {
-    <!-- Vector Store Switcher -->
-    <section class="card vectorstore-card">
-      <div class="card-title">🗄️ Active Vector Store</div>
-      <div class="vectorstore-row">
-        <span class="badge" [class.badge-pg]="stats.activeVectorStore === 'PGVECTOR'"
-                            [class.badge-simple]="stats.activeVectorStore === 'SIMPLE'">
-          {{ activeLabel() }}
-        </span>
-        <button class="btn-switch" (click)="switchVectorStore(otherStore())" [disabled]="switching">
-          {{ switching ? 'Switching…' : 'Switch to ' + otherStoreLabel() }}
-        </button>
+  <!-- Filter Panel -->
+  <section class="card filter-card">
+    <div class="card-title">🔍 Filters</div>
+    <div class="filter-row">
+      <!-- DB filter -->
+      <div class="filter-group">
+        <span class="filter-label">🗄️ Vector DB</span>
+        <div class="chip-group">
+          @for (type of availableVectorStoreTypes; track type) {
+            <button
+              class="chip"
+              [class.chip-active]="isVsSelected(type)"
+              [class.chip-pg]="type === 'PGVECTOR'"
+              [class.chip-simple]="type === 'SIMPLE'"
+              (click)="toggleVectorStoreType(type)"
+            >{{ type }}</button>
+          }
+        </div>
       </div>
-      @if (stats.activeVectorStore === 'SIMPLE') {
-        <p class="warn">⚠️ In-Memory store is empty until you re-index documents. Data is lost on restart.</p>
-      }
-    </section>
 
+      <!-- Model filter -->
+      <div class="filter-group">
+        <span class="filter-label">🤖 Model</span>
+        <div class="chip-group">
+          <button
+            class="chip"
+            [class.chip-active]="allModelsSelected()"
+            (click)="selectAllModels()"
+          >All</button>
+          @for (model of availableModels; track model) {
+            <button
+              class="chip"
+              [class.chip-active]="isModelSelected(model)"
+              (click)="toggleModel(model)"
+            >{{ model }}</button>
+          }
+        </div>
+      </div>
+
+      <!-- Recent limit -->
+      <div class="filter-group">
+        <label class="filter-label" for="recent-limit">📋 Show last</label>
+        <select
+          id="recent-limit"
+          class="limit-select"
+          [(ngModel)]="recentLimit"
+          (ngModelChange)="onRecentLimitChange()"
+        >
+          @for (opt of recentLimitOptions; track opt) {
+            <option [value]="opt">{{ opt }} entries</option>
+          }
+        </select>
+      </div>
+    </div>
+  </section>
+
+  @if (!loading && stats) {
     <!-- Summary Cards -->
     <section class="cards-row">
       <div class="summary-card">
         <div class="summary-label">Total Requests</div>
         <div class="summary-value">{{ stats.totalRequests }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Active Store</div>
+        <div class="summary-value summary-store"
+             [class.pg]="stats.activeVectorStore === 'PGVECTOR'"
+             [class.simple]="stats.activeVectorStore === 'SIMPLE'">
+          {{ stats.activeVectorStore }}
+        </div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Avg Response Time</div>
@@ -115,7 +162,7 @@
     <!-- Recent Requests Table -->
     @if (stats.recentRequests.length > 0) {
       <section class="card">
-        <div class="card-title">🕑 Recent Requests (last {{ stats.recentRequests.length }})</div>
+        <div class="card-title">🕑 Recent Requests (showing {{ stats.recentRequests.length }})</div>
         <div class="table-scroll">
           <table class="requests-table">
             <thead>
@@ -160,7 +207,7 @@
       </section>
     } @else {
       <section class="card empty-card">
-        <p>No requests recorded yet. Start chatting to see benchmarks here.</p>
+        <p>No matching requests found. Adjust filters or start chatting to record benchmarks.</p>
       </section>
     }
   }

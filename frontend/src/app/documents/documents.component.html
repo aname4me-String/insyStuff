@@ -1,18 +1,35 @@
 <div class="docs-wrapper">
   <div class="docs-header">
     <h2>Indexed Documents</h2>
-    <label class="upload-btn" [class.disabled]="uploading">
-      {{ uploading ? 'Indexing…' : '＋ Upload PDF(s)' }}
-      <input
-        #fileInput
-        type="file"
-        accept=".pdf"
-        multiple
-        (change)="onFileChange($event)"
-        [disabled]="uploading"
-        hidden
-      />
-    </label>
+    <div class="docs-controls">
+      <label class="vs-label" for="docs-vs-select">🗄️ Vector DB</label>
+      <select
+        id="docs-vs-select"
+        class="vs-select"
+        [(ngModel)]="selectedVectorStore"
+        name="selectedVectorStore"
+        [disabled]="vectorStoreTypes.length === 0"
+      >
+        @for (t of vectorStoreTypes; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+        @if (vectorStoreTypes.length === 0) {
+          <option value="">Loading…</option>
+        }
+      </select>
+      <label class="upload-btn" [class.disabled]="uploading">
+        {{ uploading ? 'Indexing…' : '＋ Upload PDF(s)' }}
+        <input
+          #fileInput
+          type="file"
+          accept=".pdf"
+          multiple
+          (change)="onFileChange($event)"
+          [disabled]="uploading"
+          hidden
+        />
+      </label>
+    </div>
   </div>
 
   @if (uploadStatuses.length > 0) {

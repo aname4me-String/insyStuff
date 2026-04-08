@@ -155,8 +155,18 @@ export class RagService {
     });
   }
 
-  getStats(): Observable<StatsResponse> {
-    return this.http.get<StatsResponse>(`${this.base}/stats`);
+  getStats(vectorStoreTypes?: string[], models?: string[], recentLimit?: number): Observable<StatsResponse> {
+    const params: Record<string, string> = {};
+    if (vectorStoreTypes && vectorStoreTypes.length > 0) {
+      params['vectorStoreTypes'] = vectorStoreTypes.join(',');
+    }
+    if (models && models.length > 0) {
+      params['models'] = models.join(',');
+    }
+    if (recentLimit !== undefined) {
+      params['recentLimit'] = String(recentLimit);
+    }
+    return this.http.get<StatsResponse>(`${this.base}/stats`, { params });
   }
 
   getVectorStoreTypes(): Observable<string[]> {

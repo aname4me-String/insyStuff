@@ -58,44 +58,69 @@
   margin-bottom: 1rem;
 }
 
-/* Vector store card */
-.vectorstore-card {
-  .vectorstore-row {
+/* Filter panel */
+.filter-card {
+  .filter-row {
     display: flex;
-    align-items: center;
-    gap: 1rem;
     flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-start;
   }
 
-  .warn {
-    margin: 0.75rem 0 0;
-    font-size: 0.85rem;
-    color: #f6ad55;
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
   }
 }
 
-.badge {
-  padding: 0.35rem 0.9rem;
+.chip {
+  padding: 0.3rem 0.75rem;
   border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #4a5568;
+  background: transparent;
+  color: #a0aec0;
+  transition: all 0.15s;
+
+  &:hover { border-color: #a0aec0; color: #e0e0e0; }
 }
 
-.badge-pg { background: #1a365d; color: #63b3ed; border: 1px solid #2b6cb0; }
-.badge-simple { background: #1a2f1a; color: #68d391; border: 1px solid #276749; }
+.chip-active {
+  border-color: #e94560;
+  color: #fff;
+  background: #e9456022;
+}
 
-.btn-switch {
-  padding: 0.4rem 0.9rem;
-  background: transparent;
-  border: 1px solid #4a5568;
+.chip-pg.chip-active { border-color: #63b3ed; color: #63b3ed; background: #1a365d44; }
+.chip-simple.chip-active { border-color: #68d391; color: #68d391; background: #1a2f1a44; }
+
+.limit-select {
+  background: #1a1a2e;
+  border: 1px solid #0f3460;
   border-radius: 6px;
-  color: #a0aec0;
-  cursor: pointer;
+  color: #e0e0e0;
   font-size: 0.85rem;
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) { border-color: #e94560; color: #e94560; }
-  &:disabled { opacity: 0.5; cursor: default; }
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  outline: none;
+  &:focus { border-color: #e94560; }
 }
 
 /* Summary cards row */
@@ -126,6 +151,12 @@
     font-size: 1.3rem;
     font-weight: 700;
     color: #e94560;
+  }
+
+  .summary-store {
+    font-size: 1rem;
+    &.pg { color: #63b3ed; }
+    &.simple { color: #68d391; }
   }
 }
 
@@ -208,6 +239,9 @@
   font-size: 0.72rem;
   font-weight: 600;
 }
+
+.badge-pg { background: #1a365d; color: #63b3ed; border: 1px solid #2b6cb0; }
+.badge-simple { background: #1a2f1a; color: #68d391; border: 1px solid #276749; }
 
 .empty-card {
   text-align: center;

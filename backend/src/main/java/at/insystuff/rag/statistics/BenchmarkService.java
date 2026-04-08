@@ -51,25 +51,34 @@ public class BenchmarkService {
     // Aggregation
     // -----------------------------------------------------------------------
 
-    public StatsResponse computeStats() {
-        // Use at most the last 1000 records to avoid loading unbounded data into memory
+    /** Compute stats with optional filters. Empty lists mean "no filter" (all values pass). */
+    public StatsResponse computeStats(List<String> vectorStoreTypes, List<String> models, int recentLimit) {
         List<RequestBenchmark> all = repository.findTop1000ByOrderByTimestampDesc();
+        boolean filterVs = !vectorStoreTypes.isEmpty();
+        boolean filterModel = !models.isEmpty();
+
+        List<RequestBenchmark> filtered = all.stream()
+                .filter(b -> !filterVs || vectorStoreTypes.contains(b.getVectorStoreType()))
+                .filter(b -> !filterModel || models.contains(b.getModel()))
+                .toList();
+
         int total = (int) repository.count();
-        if (total == 0) {
-            return new StatsResponse(0,
+        if (filtered.isEmpty()) {
+            return new StatsResponse(total,
                     vectorStoreRouter.getActiveType().name(),
                     empty(), empty(), empty(), empty(), empty(), empty(),
                     List.of());
         }
 
-        MetricStats vectorSearch = computeLong(all, b -> b.getVectorSearchMs() != null ? b.getVectorSearchMs() : 0L);
-        MetricStats totalResponse = computeLong(all, b -> b.getTotalResponseMs() != null ? b.getTotalResponseMs() : 0L);
-        MetricStats tokens = computeInt(all, b -> b.getTokenCount() != null ? (long) b.getTokenCount() : 0L);
-        MetricStats sources = computeInt(all, b -> b.getSourceCount() != null ? (long) b.getSourceCount() : 0L);
-        MetricStats ram = computeLong(all, b -> b.getRamUsedMb() != null ? b.getRamUsedMb() : 0L);
-        MetricStats cpu = computeDouble(all, b -> b.getCpuLoadPercent() != null ? b.getCpuLoadPercent() : 0.0);
+        MetricStats vectorSearch = computeLong(filtered, b -> b.getVectorSearchMs() != null ? b.getVectorSearchMs() : 0L);
+        MetricStats totalResponse = computeLong(filtered, b -> b.getTotalResponseMs() != null ? b.getTotalResponseMs() : 0L);
+        MetricStats tokens = computeInt(filtered, b -> b.getTokenCount() != null ? (long) b.getTokenCount() : 0L);
+        MetricStats sources = computeInt(filtered, b -> b.getSourceCount() != null ? (long) b.getSourceCount() : 0L);
+        MetricStats ram = computeLong(filtered, b -> b.getRamUsedMb() != null ? b.getRamUsedMb() : 0L);
+        MetricStats cpu = computeDouble(filtered, b -> b.getCpuLoadPercent() != null ? b.getCpuLoadPercent() : 0.0);
 
-        List<RecentRequest> recent = repository.findTop200ByOrderByTimestampDesc().stream()
+        int limit = Math.min(recentLimit, filtered.size());
+        List<RecentRequest> recent = filtered.subList(0, limit).stream()
                 .map(this::toDto)
                 .toList();
 
@@ -77,6 +86,10 @@ public class BenchmarkService {
                 vectorStoreRouter.getActiveType().name(),
                 vectorSearch, totalResponse, tokens, sources, ram, cpu,
                 recent);
+    }
+
+    public StatsResponse computeStats() {
+        return computeStats(List.of(), List.of(), 50);
     }
 
     // -----------------------------------------------------------------------
