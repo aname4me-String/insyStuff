@@ -37,6 +37,11 @@ export interface ConversationMessage {
   createdAt: string;
 }
 
+export type WsStreamEvent =
+  | { type: 'token'; content: string }
+  | { type: 'done'; messageId: number; sources: SourceReference[] }
+  | { type: 'error'; message: string };
+
 @Injectable({ providedIn: 'root' })
 export class RagService {
   private readonly base = '/api';
@@ -89,5 +94,30 @@ export class RagService {
 
   sendConversationMessage(chatId: number, question: string, model?: string): Observable<ConversationMessage> {
     return this.http.post<ConversationMessage>(`${this.base}/chats/${chatId}/messages`, { question, model });
+  }
+
+  streamConversationMessage(chatId: number, question: string, model?: string): Observable<WsStreamEvent> {
+    return new Observable(observer => {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}/ws/chat`);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ chatId, question, model: model ?? '' }));
+      };
+
+      ws.onmessage = (event: MessageEvent) => {
+        const data: WsStreamEvent = JSON.parse(event.data as string);
+        observer.next(data);
+        if (data.type === 'done' || data.type === 'error') {
+          ws.close();
+          observer.complete();
+        }
+      };
+
+      ws.onerror = () => { observer.error(new Error('WebSocket connection failed – check network or server availability')); };
+      ws.onclose = () => { observer.complete(); };
+
+      return () => { if (ws.readyState < 2) ws.close(); };
+    });
   }
 }

@@ -64,7 +64,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         // Retrieve context + token stream
         QueryService.StreamContext ctx = queryService.streamAnswer(question, model);
 
-        // Stream tokens to the client
+        // Stream tokens to the client.
+        // We intentionally use toIterable() (blocking iteration) because this handler
+        // runs on a Tomcat servlet thread where blocking is the correct pattern.
+        // Each token is forwarded immediately, giving the client live streaming output.
         StringBuilder fullAnswer = new StringBuilder();
         try {
             for (String token : ctx.tokenStream().toIterable()) {

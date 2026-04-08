@@ -1,25 +1,34 @@
 <div class="chat-wrapper">
   <!-- Chats sidebar -->
-  <div class="chats-sidebar">
-    <button class="new-chat-btn" (click)="newConversation()">＋ New Chat</button>
-    @if (loadingChats) {
-      <div class="chats-loading">Loading…</div>
-    } @else if (conversations.length === 0) {
-      <div class="chats-empty">No chats yet</div>
-    } @else {
-      <ul class="chats-list">
-        @for (conv of conversations; track conv.id) {
-          <li
-            class="chat-item"
-            [class.active]="conv.id === currentConversationId"
-            (click)="selectConversation(conv.id)"
-          >
-            <span class="chat-item-title">{{ conv.title }}</span>
-            <button class="chat-delete-btn" title="Delete chat" (click)="deleteConversation(conv, $event)">🗑</button>
-          </li>
+  <div class="chats-sidebar" [class.collapsed]="chatsSidebarCollapsed">
+    <div class="chats-sidebar-content">
+      <button class="new-chat-btn" (click)="newConversation()">＋ New Chat</button>
+      <div class="chats-list-scroll">
+        @if (loadingChats) {
+          <div class="chats-loading">Loading…</div>
+        } @else if (conversations.length === 0) {
+          <div class="chats-empty">No chats yet</div>
+        } @else {
+          <ul class="chats-list">
+            @for (conv of conversations; track conv.id) {
+              <li
+                class="chat-item"
+                [class.active]="conv.id === currentConversationId"
+                (click)="selectConversation(conv.id)"
+              >
+                <span class="chat-item-title">{{ conv.title }}</span>
+                <button class="chat-delete-btn" title="Delete chat" (click)="deleteConversation(conv, $event)">🗑</button>
+              </li>
+            }
+          </ul>
         }
-      </ul>
-    }
+      </div>
+    </div>
+    <button
+      class="chats-collapse-strip"
+      (click)="toggleChatsSidebar()"
+      [title]="chatsSidebarCollapsed ? 'Show chats' : 'Hide chats'"
+    >{{ chatsSidebarCollapsed ? '›' : '‹' }}</button>
   </div>
 
   <!-- Main chat panel -->

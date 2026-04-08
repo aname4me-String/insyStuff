@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, AfterViewChecked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RagService, ConversationMessage, Conversation, SourceReference } from '../services/rag.service';
+import { RagService, ConversationMessage, Conversation, SourceReference, WsStreamEvent } from '../services/rag.service';
 
 interface DisplayMessage {
   role: 'user' | 'assistant';
@@ -32,6 +32,7 @@ export class ChatComponent implements AfterViewChecked, OnInit {
   selectedModel = '';
   loadingChats = false;
   loadingMessages = false;
+  chatsSidebarCollapsed = false;
 
   constructor(private ragService: RagService) {}
 
@@ -52,6 +53,10 @@ export class ChatComponent implements AfterViewChecked, OnInit {
 
   ngAfterViewChecked(): void {
     this.messagesEnd?.nativeElement.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  toggleChatsSidebar(): void {
+    this.chatsSidebarCollapsed = !this.chatsSidebarCollapsed;
   }
 
   loadConversations(): void {
@@ -137,26 +142,31 @@ export class ChatComponent implements AfterViewChecked, OnInit {
     this.question = '';
     this.sending = true;
     this.messages.push({ role: 'user', text: q });
-    this.messages.push({ role: 'assistant', text: '', loading: true });
+    const assistantMsg: DisplayMessage = { role: 'assistant', text: '', loading: true };
+    this.messages.push(assistantMsg);
 
-    this.ragService.sendConversationMessage(this.currentConversationId!, q, this.selectedModel).subscribe({
-      next: (res: ConversationMessage) => {
-        const last = this.messages[this.messages.length - 1];
-        last.text = res.content;
-        last.sources = res.sources;
-        last.loading = false;
-        last.model = res.model ?? undefined;
-        this.sending = false;
-        // Update conversation title in sidebar
-        const conv = this.conversations.find(c => c.id === this.currentConversationId);
-        if (conv && conv.title === DEFAULT_CHAT_TITLE) {
-          this.loadConversations();
+    this.ragService.streamConversationMessage(this.currentConversationId!, q, this.selectedModel).subscribe({
+      next: (event: WsStreamEvent) => {
+        if (event.type === 'token') {
+          assistantMsg.text += event.content;
+          assistantMsg.loading = false;
+        } else if (event.type === 'done') {
+          assistantMsg.sources = event.sources;
+          assistantMsg.loading = false;
+          this.sending = false;
+          const conv = this.conversations.find(c => c.id === this.currentConversationId);
+          if (conv && conv.title === DEFAULT_CHAT_TITLE) {
+            this.loadConversations();
+          }
+        } else if (event.type === 'error') {
+          assistantMsg.text = '⚠️ ' + event.message;
+          assistantMsg.loading = false;
+          this.sending = false;
         }
       },
       error: () => {
-        const last = this.messages[this.messages.length - 1];
-        last.text = '⚠️ Could not reach the backend. Is it running?';
-        last.loading = false;
+        assistantMsg.text = '⚠️ Could not reach the backend. Is it running?';
+        assistantMsg.loading = false;
         this.sending = false;
       },
     });

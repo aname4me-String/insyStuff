@@ -98,9 +98,11 @@ public class QueryService {
             prompt = promptTemplate.create(Map.of("context", context, "question", question));
         }
 
-        // 5. Stream tokens
+        // 5. Stream tokens — null-safe chain through getResult → getOutput → getText
         Flux<String> tokenStream = chatModel.stream(prompt)
-                .mapNotNull(r -> r.getResult() != null ? r.getResult().getOutput().getText() : null)
+                .mapNotNull(r -> r.getResult())
+                .mapNotNull(result -> result.getOutput())
+                .mapNotNull(output -> output.getText())
                 .filter(t -> !t.isEmpty());
 
         log.info("Prepared stream for question with {} source chunks, model='{}'",
