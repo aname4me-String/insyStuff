@@ -10,6 +10,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class QueryService {
     private final VectorStoreDocumentChunkRepository chunkRepository;
     private final DocumentMetadataRepository documentMetadataRepository;
 
-    public ChatResponse answer(String question) {
+    public ChatResponse answer(String question, String model) {
         // 1. Retrieve top-k relevant chunks
         List<Document> relevant = vectorStore.similaritySearch(
                 SearchRequest.builder().query(question).topK(5).build()
@@ -58,9 +59,15 @@ public class QueryService {
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n---\n\n"));
 
-        // 3. Build and call prompt
+        // 3. Build and call prompt, optionally overriding the model
         PromptTemplate promptTemplate = new PromptTemplate(PROMPT_TEMPLATE);
-        Prompt prompt = promptTemplate.create(Map.of("context", context, "question", question));
+        Prompt prompt;
+        if (model != null && !model.isBlank()) {
+            OllamaChatOptions options = OllamaChatOptions.builder().model(model).build();
+            prompt = promptTemplate.create(Map.of("context", context, "question", question), options);
+        } else {
+            prompt = promptTemplate.create(Map.of("context", context, "question", question));
+        }
         String answer = chatModel.call(prompt).getResult().getOutput().getText();
 
         // 4. Resolve sources
@@ -76,7 +83,7 @@ public class QueryService {
                 .distinct()
                 .toList();
 
-        log.info("Answered question with {} source chunks", chunks.size());
+        log.info("Answered question with {} source chunks using model '{}'", chunks.size(), model != null && !model.isBlank() ? model : "default");
         return new ChatResponse(answer, sources);
     }
 

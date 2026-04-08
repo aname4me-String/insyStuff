@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface SourceReference {
   fileName: string;
@@ -27,8 +28,8 @@ export class RagService {
 
   constructor(private http: HttpClient) {}
 
-  chat(question: string): Observable<ChatResponse> {
-    return this.http.post<ChatResponse>(`${this.base}/chat`, { question });
+  chat(question: string, model?: string): Observable<ChatResponse> {
+    return this.http.post<ChatResponse>(`${this.base}/chat`, { question, model });
   }
 
   listDocuments(): Observable<DocumentMetadata[]> {
@@ -39,5 +40,11 @@ export class RagService {
     const form = new FormData();
     form.append('file', file);
     return this.http.post(`${this.base}/index`, form, { responseType: 'text' });
+  }
+
+  getModels(): Observable<string[]> {
+    return this.http.get<{ models: string[] }>(`${this.base}/models`).pipe(
+      map(res => res.models)
+    );
   }
 }

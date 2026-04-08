@@ -28,6 +28,9 @@ spring:
           model: ${EMBEDDING_MODEL:nomic-embed-text}
           num-ctx: 8192
 
+app:
+  available-models: ${AVAILABLE_MODELS:llama3.2,mistral,phi3}
+
 server:
   port: ${PORT:8080}
 

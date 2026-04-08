@@ -20,7 +20,8 @@ public class ChatController {
         if (question == null || question.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "question must not be blank"));
         }
-        QueryService.ChatResponse response = queryService.answer(question);
+        String model = body.get("model");
+        QueryService.ChatResponse response = queryService.answer(question, model);
         return ResponseEntity.ok(Map.of(
                 "answer", response.answer(),
                 "sources", response.sources()

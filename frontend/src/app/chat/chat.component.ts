@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewChecked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RagService, ChatResponse, SourceReference } from '../services/rag.service';
@@ -8,6 +8,7 @@ interface Message {
   text: string;
   sources?: SourceReference[];
   loading?: boolean;
+  model?: string;
 }
 
 @Component({
@@ -17,7 +18,7 @@ interface Message {
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.scss',
 })
-export class ChatComponent implements AfterViewChecked {
+export class ChatComponent implements AfterViewChecked, OnInit {
   @ViewChild('messagesEnd') private messagesEnd!: ElementRef;
 
   messages: Message[] = [
@@ -25,8 +26,24 @@ export class ChatComponent implements AfterViewChecked {
   ];
   question = '';
   sending = false;
+  availableModels: string[] = [];
+  selectedModel = '';
 
   constructor(private ragService: RagService) {}
+
+  ngOnInit(): void {
+    this.ragService.getModels().subscribe({
+      next: (models) => {
+        this.availableModels = models;
+        if (models.length > 0) {
+          this.selectedModel = models[0];
+        }
+      },
+      error: () => {
+        this.availableModels = [];
+      },
+    });
+  }
 
   ngAfterViewChecked(): void {
     this.messagesEnd?.nativeElement.scrollIntoView({ behavior: 'smooth' });
@@ -41,12 +58,13 @@ export class ChatComponent implements AfterViewChecked {
     this.messages.push({ role: 'user', text: q });
     this.messages.push({ role: 'assistant', text: '', loading: true });
 
-    this.ragService.chat(q).subscribe({
+    this.ragService.chat(q, this.selectedModel).subscribe({
       next: (res: ChatResponse) => {
         const last = this.messages[this.messages.length - 1];
         last.text = res.answer;
         last.sources = res.sources;
         last.loading = false;
+        last.model = this.selectedModel;
         this.sending = false;
       },
       error: () => {

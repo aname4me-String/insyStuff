@@ -5,6 +5,44 @@
   background: #1a1a2e;
 }
 
+.model-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.5rem;
+  border-bottom: 1px solid #0f3460;
+  background: #16213e;
+}
+
+.model-label {
+  font-size: 0.85rem;
+  color: #718096;
+  white-space: nowrap;
+}
+
+.model-select {
+  background: #1a1a2e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  outline: none;
+  &:focus { border-color: #e94560; }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.model-badge {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: #a0aec0;
+  background: #0f3460;
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  align-self: flex-start;
+}
+
 .messages {
   flex: 1;
   overflow-y: auto;
