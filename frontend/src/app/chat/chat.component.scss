@@ -1,51 +1,35 @@
+:host {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
 .chat-wrapper {
   display: flex;
   flex-direction: row;
+  flex: 1;
   height: 100%;
   background: #1a1a2e;
+  overflow: hidden;
 }
 
 // ── Chats sidebar ──────────────────────────────────────────────────────────
 .chats-sidebar {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-shrink: 0;
   background: #16213e;
   border-right: 1px solid #0f3460;
-  transition: width 0.2s ease;
-  width: 220px; // 196px content + 24px collapse strip
+  width: 220px;
   overflow: hidden;
-
-  &.collapsed {
-    width: 24px;
-  }
 }
 
 .chats-sidebar-content {
   flex: 1;
-  min-width: 196px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.chats-collapse-strip {
-  width: 24px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-left: 1px solid #0f3460;
-  color: #718096;
-  cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0;
-  transition: background 0.15s, color 0.15s;
-  writing-mode: vertical-lr;
-
-  &:hover { background: #0f346033; color: #e0e0e0; }
 }
 
 .new-chat-btn {
