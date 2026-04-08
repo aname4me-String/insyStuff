@@ -22,6 +22,21 @@ export interface DocumentMetadata {
   creationTs: string | null;
 }
 
+export interface Conversation {
+  id: number;
+  title: string;
+  createdAt: string;
+}
+
+export interface ConversationMessage {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  model: string | null;
+  sources: SourceReference[];
+  createdAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RagService {
   private readonly base = '/api';
@@ -46,5 +61,25 @@ export class RagService {
     return this.http.get<{ models: string[] }>(`${this.base}/models`).pipe(
       map(res => res.models)
     );
+  }
+
+  listConversations(): Observable<Conversation[]> {
+    return this.http.get<Conversation[]>(`${this.base}/chats`);
+  }
+
+  createConversation(title?: string): Observable<Conversation> {
+    return this.http.post<Conversation>(`${this.base}/chats`, title ? { title } : {});
+  }
+
+  deleteConversation(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/chats/${id}`);
+  }
+
+  getConversationMessages(chatId: number): Observable<ConversationMessage[]> {
+    return this.http.get<ConversationMessage[]>(`${this.base}/chats/${chatId}/messages`);
+  }
+
+  sendConversationMessage(chatId: number, question: string, model?: string): Observable<ConversationMessage> {
+    return this.http.post<ConversationMessage>(`${this.base}/chats/${chatId}/messages`, { question, model });
   }
 }

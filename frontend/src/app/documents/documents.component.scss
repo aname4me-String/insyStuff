@@ -12,9 +12,15 @@
   &.disabled { opacity: 0.5; cursor: default; }
 }
 
+.upload-status-list {
+  display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem;
+}
+
 .upload-status {
-  margin-bottom: 1rem; padding: 0.6rem 1rem; border-radius: 8px;
-  background: #16213e; border: 1px solid #0f3460; font-size: 0.9rem; color: #a0aec0;
+  padding: 0.45rem 0.9rem; border-radius: 8px;
+  background: #16213e; border: 1px solid #0f3460; font-size: 0.88rem; color: #a0aec0;
+  &.success { border-color: #68d39166; color: #68d391; }
+  &.error { border-color: #e9456066; color: #fc8181; }
 }
 
 .loading, .empty { color: #718096; font-size: 0.95rem; padding: 2rem 0; text-align: center; }
