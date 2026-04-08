@@ -1,6 +1,10 @@
 spring:
   application:
     name: rag
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
   datasource:
     url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/venlab}
     username: ${POSTGRES_USER:raguser}

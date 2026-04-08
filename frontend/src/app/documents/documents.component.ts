@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RagService, DocumentMetadata } from '../services/rag.service';
 
 interface UploadStatus {
@@ -10,7 +11,7 @@ interface UploadStatus {
 @Component({
   selector: 'app-documents',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.scss',
 })
@@ -21,6 +22,9 @@ export class DocumentsComponent implements OnInit {
   loading = false;
   uploadStatuses: UploadStatus[] = [];
   uploading = false;
+
+  renamingId: number | null = null;
+  renameValue = '';
 
   constructor(private ragService: RagService) {}
 
@@ -66,6 +70,43 @@ export class DocumentsComponent implements OnInit {
       error: () => {
         this.uploadStatuses[index] = { name: file.name, status: 'error' };
         this.uploadNext(files, index + 1);
+      },
+    });
+  }
+
+  deleteDocument(doc: DocumentMetadata): void {
+    if (!confirm(`Delete "${doc.fileName}"? This will remove all indexed data for this document.`)) return;
+    this.ragService.deleteDocument(doc.id).subscribe({
+      next: () => { this.documents = this.documents.filter(d => d.id !== doc.id); },
+      error: () => { alert('Failed to delete document.'); },
+    });
+  }
+
+  startRename(doc: DocumentMetadata): void {
+    this.renamingId = doc.id;
+    this.renameValue = doc.fileName;
+  }
+
+  cancelRename(): void {
+    this.renamingId = null;
+    this.renameValue = '';
+  }
+
+  confirmRename(doc: DocumentMetadata): void {
+    const newName = this.renameValue.trim();
+    if (!newName || newName === doc.fileName) {
+      this.cancelRename();
+      return;
+    }
+    this.ragService.renameDocument(doc.id, newName).subscribe({
+      next: (updated) => {
+        const idx = this.documents.findIndex(d => d.id === doc.id);
+        if (idx !== -1) this.documents[idx] = updated;
+        this.cancelRename();
+      },
+      error: () => {
+        alert('Failed to rename document.');
+        this.cancelRename();
       },
     });
   }

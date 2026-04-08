@@ -12,4 +12,8 @@ public interface VectorStoreDocumentChunkRepository
         extends JpaRepository<VectorStoreDocumentChunk, VectorStoreDocumentChunkId> {
 
     List<VectorStoreDocumentChunk> findByVectorIdIn(List<String> vectorIds);
+
+    List<VectorStoreDocumentChunk> findByDocumentId(Long documentId);
+
+    void deleteByDocumentId(Long documentId);
 }

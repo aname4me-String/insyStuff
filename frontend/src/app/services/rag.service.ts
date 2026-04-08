@@ -57,6 +57,14 @@ export class RagService {
     return this.http.post(`${this.base}/index`, form, { responseType: 'text' });
   }
 
+  deleteDocument(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/documents/${id}`);
+  }
+
+  renameDocument(id: number, fileName: string): Observable<DocumentMetadata> {
+    return this.http.patch<DocumentMetadata>(`${this.base}/documents/${id}`, { fileName });
+  }
+
   getModels(): Observable<string[]> {
     return this.http.get<{ models: string[] }>(`${this.base}/models`).pipe(
       map(res => res.models)
