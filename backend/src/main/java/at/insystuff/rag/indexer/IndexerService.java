@@ -71,13 +71,19 @@ public class IndexerService {
             DocumentMetadata saved = documentMetadataRepository.save(metadata);
             log.info("Saved document metadata id={} fileName={}", saved.getId(), fileName);
 
-            // Add chunks to vector store
-            vectorStore.add(chunks);
+            // Add chunks to vector store, sanitizing null bytes that PostgreSQL rejects
+            List<Document> sanitizedChunks = chunks.stream()
+                    .map(chunk -> {
+                        String clean = chunk.getText().replace("\u0000", "");
+                        return new Document(chunk.getId(), clean, chunk.getMetadata());
+                    })
+                    .toList();
+            vectorStore.add(sanitizedChunks);
 
             // Persist chunk-to-document mapping
-            int totalChunks = chunks.size();
-            for (int i = 0; i < chunks.size(); i++) {
-                Document chunk = chunks.get(i);
+            int totalChunks = sanitizedChunks.size();
+            for (int i = 0; i < sanitizedChunks.size(); i++) {
+                Document chunk = sanitizedChunks.get(i);
                 String vectorId = chunk.getId();
                 Object pageObj = chunk.getMetadata().get("page_number");
                 Integer pageNumber = pageObj instanceof Number n ? n.intValue() : null;
